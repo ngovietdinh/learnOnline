@@ -67,9 +67,22 @@ export const MISCONCEPTIONS: Record<string, string> = {
   'nham-cong-thuc': 'Nhớ sai công thức tầm xa',
   'quen-binh-phuong': 'Sai thứ nguyên / quên bình phương',
   'v-ngang-anh-huong-roi': 'Nghĩ vận tốc ngang ảnh hưởng thời gian rơi',
+  'nham-phep-tinh': 'Chọn nhầm phép tính (cộng/trừ, nhân/chia) so với ý bài toán',
+  'tru-nguoc': 'Trừ ngược ở hàng đơn vị (lấy số bé trừ số lớn) thay vì mượn 1 chục',
+  'cong-thay-nhan': 'Cộng hai thừa số thay vì nhân',
+  'nham-bang-nhan': 'Nhớ nhầm bảng nhân',
+  'nham-bang-chia': 'Nhớ nhầm bảng chia',
+  'nham-quy-luat': 'Chưa tìm ra nhóm lặp lại trong dãy',
+  'nham-trai-phai': 'Nhầm bên trái với bên phải',
+  'nham-vi-tri': 'Nhầm vị trí trên – dưới',
+  'nham-chu-cai': 'Nhầm giữa các chữ cái gần giống nhau',
+  'nham-don-vi': 'Nhầm đơn vị đo',
+  'nham-gio': 'Nhầm kim giờ với kim phút',
+  'nham-gia-tri-vi-tri': 'Nhầm giá trị của chữ số theo hàng',
   'giang-lai-chua-dung': 'Chọn lời giải thích chưa đúng bản chất ở bước giảng lại',
 }
 
 export function misconceptionLabel(code: string): string {
+  if (code.startsWith('ng:')) return code.slice(3)
   return MISCONCEPTIONS[code] ?? code
 }

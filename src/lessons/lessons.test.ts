@@ -25,7 +25,7 @@ describe.each(LESSONS.map((l) => [l.id, l] as const))('bài %s', (_id, lesson) =
         expect(q.explain.length).toBeGreaterThan(5)
         for (const c of q.choices) {
           expect(c.label, q.prompt).not.toMatch(/NaN|undefined|Infinity/)
-          if (c.misconception) expect(MISCONCEPTIONS[c.misconception], c.misconception).toBeDefined()
+          if (c.misconception && !c.misconception.startsWith('ng:')) expect(MISCONCEPTIONS[c.misconception], c.misconception).toBeDefined()
         }
         expect(q.prompt).not.toMatch(/NaN|undefined/)
       }

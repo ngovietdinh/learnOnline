@@ -103,7 +103,7 @@ export function QuestionView({ q, gentle, showLevel, say, onResult, onNext, rewa
         {q.choices.map((c, i) => (
           <button key={`${c.label}-${i}`} className={`choice ${status(i)}`} onClick={(e) => choose(i, e.currentTarget)} disabled={done && picked !== i && !c.correct && !gentle}>
             {c.visual && <span className="choice-visual">{c.visual}</span>}
-            <span className="choice-label">{c.label}</span>
+            <span className={`choice-label ${c.visual && (q.layout ?? 'big') === 'big' ? 'sr-only' : ''}`}>{c.label}</span>
           </button>
         ))}
       </div>

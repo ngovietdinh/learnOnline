@@ -13,29 +13,9 @@ export const SUBJECTS: Record<SubjectId, { name: string; icon: string; color: st
   tienganh: { name: 'Tiếng Anh', icon: '🌍', color: '#a855f7' },
 }
 
-export type Framework = 'GDMN' | 'GDPT2018' | 'CCSS' | 'NGSS' | 'CEFR'
-
-export const FRAMEWORKS: Record<Framework, string> = {
-  GDMN: 'Chương trình Giáo dục mầm non (Bộ GD&ĐT)',
-  GDPT2018: 'Chương trình Giáo dục phổ thông 2018 (Thông tư 32/2018/TT-BGDĐT)',
-  CCSS: 'Common Core State Standards (Hoa Kỳ) — đối chiếu quốc tế môn Toán, Đọc hiểu',
-  NGSS: 'Next Generation Science Standards (Hoa Kỳ) — đối chiếu quốc tế môn Khoa học',
-  CEFR: 'Khung tham chiếu ngôn ngữ chung châu Âu (CEFR) — Tiếng Anh',
-}
-
-/** Tên ngắn tiếng Việt hiển thị trên nhãn chuẩn. */
-export const FRAMEWORK_SHORT: Record<Framework, string> = {
-  GDMN: 'Mầm non',
-  GDPT2018: 'GDPT 2018',
-  CCSS: 'Chuẩn Toán Mỹ',
-  NGSS: 'Chuẩn Khoa học Mỹ',
-  CEFR: 'Khung châu Âu',
-}
-
-export interface StandardRef {
-  framework: Framework
-  code: string
-}
+export * from './standards'
+import { cc, ce, g, mn, ng, type StandardRef } from './standards'
+import { CONTENT_SKILLS } from '../content'
 
 export interface Skill {
   id: string
@@ -49,140 +29,39 @@ export interface Skill {
   prereqs: string[]
   /** Có bài học tương tác đầy đủ chưa. */
   lessonId?: string
+  /** 0 = mầm non, 1–5 = lớp ở tiểu học (để xếp bài theo lớp). */
+  gradeNum?: number
 }
 
-const g = (code: string): StandardRef => ({ framework: 'GDPT2018', code })
-const cc = (code: string): StandardRef => ({ framework: 'CCSS', code })
-const ng = (code: string): StandardRef => ({ framework: 'NGSS', code })
-const ce = (code: string): StandardRef => ({ framework: 'CEFR', code })
-const mn = (code: string): StandardRef => ({ framework: 'GDMN', code })
-
-export const SKILLS: Skill[] = [
-  // ───────── Mầm 1–3 tuổi ─────────
-  {
-    id: 'mam.mau-sac', subject: 'nhanthuc', stage: 'mam', grade: '24–36 tháng',
-    title: 'Màu sắc quanh em', essence: 'Mỗi vật có một màu; cùng màu thì giống nhau dù là vật khác nhau.',
-    standards: [mn('Phát triển nhận thức · Nhận biết màu đỏ, vàng, xanh')], prereqs: [], lessonId: 'mau-sac',
-  },
-  {
-    id: 'mam.con-vat', subject: 'nhanthuc', stage: 'mam', grade: '18–36 tháng',
-    title: 'Con vật và tiếng kêu', essence: 'Mỗi con vật có hình dáng và tiếng kêu riêng.',
-    standards: [mn('Phát triển nhận thức · Con vật quen thuộc'), mn('Phát triển ngôn ngữ · Nghe – bắt chước âm thanh')],
-    prereqs: [], lessonId: 'con-vat',
-  },
-  {
-    id: 'mam.hinh-dang', subject: 'nhanthuc', stage: 'mam', grade: '24–36 tháng',
-    title: 'Tròn, vuông, tam giác', essence: 'Hình được nhận ra nhờ đường viền: tròn thì lăn, có góc thì không.',
-    standards: [mn('Phát triển nhận thức · Nhận biết hình tròn, hình vuông, hình tam giác')], prereqs: ['mam.mau-sac'],
-  },
-  {
-    id: 'mam.mot-nhieu', subject: 'nhanthuc', stage: 'mam', grade: '24–36 tháng',
-    title: 'Một và nhiều', essence: 'Nhóm có thể có một vật hoặc nhiều vật — mầm của khái niệm số.',
-    standards: [mn('Phát triển nhận thức · Nhận biết một và nhiều')], prereqs: [],
-  },
-
-  // ───────── Chồi 3–6 tuổi ─────────
+const LEGACY: Skill[] = [
+  // Bài tương tác viết riêng (giữ nguyên mã để không mất tiến độ đã lưu).
   {
     id: 'choi.dem-10', subject: 'toan', stage: 'choi', grade: '4–6 tuổi',
     title: 'Đếm và số lượng đến 10',
     essence: 'Số cuối cùng ta đếm cho biết cả nhóm có bao nhiêu — xếp lại kiểu gì cũng không đổi.',
     standards: [mn('Phát triển nhận thức · Đếm trên đối tượng trong phạm vi 10'), cc('K.CC.B.4'), cc('K.CC.B.5')],
-    prereqs: ['mam.mot-nhieu'], lessonId: 'dem-10',
-  },
-  {
-    id: 'choi.so-sanh', subject: 'toan', stage: 'choi', grade: '4–6 tuổi',
-    title: 'Nhiều hơn – ít hơn – bằng nhau', essence: 'Ghép đôi từng cái một: nhóm nào thừa ra là nhóm nhiều hơn.',
-    standards: [mn('Phát triển nhận thức · So sánh số lượng hai nhóm'), cc('K.CC.C.6')], prereqs: ['choi.dem-10'],
-  },
-  {
-    id: 'choi.tach-gop', subject: 'toan', stage: 'choi', grade: '5–6 tuổi',
-    title: 'Tách – gộp trong phạm vi 10', essence: 'Một số có thể tách thành hai phần, gộp hai phần lại được số ban đầu.',
-    standards: [mn('Phát triển nhận thức · Tách, gộp nhóm đối tượng'), cc('K.OA.A.3')], prereqs: ['choi.dem-10'],
-  },
-  {
-    id: 'choi.chu-cai', subject: 'ngonngu', stage: 'choi', grade: '5–6 tuổi',
-    title: 'Làm quen chữ cái', essence: 'Mỗi chữ cái ghi lại một âm ta nói ra.',
-    standards: [mn('Phát triển ngôn ngữ · Làm quen với chữ viết')], prereqs: [],
-  },
-  {
-    id: 'choi.en-sounds', subject: 'tienganh', stage: 'choi', grade: '4–6 tuổi',
-    title: 'Làm quen âm tiếng Anh', essence: 'Nghe trước, nói sau — âm thanh đi trước chữ viết.',
-    standards: [ce('Tiền A1 · Nghe hiểu từ quen thuộc')], prereqs: [],
-  },
-
-  // ───────── Tiểu học ─────────
-  {
-    id: 'th.gia-tri-vi-tri', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 1–2',
-    title: 'Hàng chục – hàng đơn vị', essence: 'Chữ số mang giá trị theo vị trí: 10 cái gộp thành 1 chục.',
-    standards: [g('Toán 1 · Số và phép tính · Các số đến 100'), cc('1.NBT.B.2')], prereqs: ['choi.dem-10'],
+    prereqs: ['mam.mot-nhieu'], gradeNum: 0, lessonId: 'dem-10',
   },
   {
     id: 'th.cong-qua-10', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 2',
     title: 'Cộng qua 10 (có nhớ trong phạm vi 20)',
     essence: 'Lấp đầy 10 trước, rồi cộng phần còn lại — 10 là "cái bến" dễ tính nhất.',
     standards: [g('Toán 2 · Số và phép tính · Phép cộng có nhớ trong phạm vi 20'), cc('1.OA.C.6')],
-    prereqs: ['choi.tach-gop', 'th.gia-tri-vi-tri'], lessonId: 'cong-qua-10',
-  },
-  {
-    id: 'th.phep-nhan', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 2–3',
-    title: 'Phép nhân', essence: 'Nhân là cộng nhiều lần cùng một số: 3 × 4 là 3 nhóm, mỗi nhóm 4.',
-    standards: [g('Toán 2 · Số và phép tính · Phép nhân'), cc('3.OA.A.1')], prereqs: ['th.cong-qua-10'],
-  },
-  {
-    id: 'th.phep-chia', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 2–3',
-    title: 'Phép chia — chia đều', essence: 'Chia là chia đều thành các phần bằng nhau; ngược lại của nhân.',
-    standards: [g('Toán 2 · Số và phép tính · Phép chia'), cc('3.OA.A.2')], prereqs: ['th.phep-nhan'],
+    prereqs: ['choi.tach-gop', 'tieuhoc.t1-so-100'], gradeNum: 2, lessonId: 'cong-qua-10',
   },
   {
     id: 'th.phan-so', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 3–4',
     title: 'Phân số', essence: 'a/b: chia một cái thành b phần BẰNG NHAU, lấy a phần. Mẫu càng lớn, mỗi phần càng nhỏ.',
     standards: [g('Toán 3 · Làm quen với phân số'), g('Toán 4 · Phân số: so sánh, phân số bằng nhau'), cc('3.NF.A.1'), cc('3.NF.A.3')],
-    prereqs: ['th.phep-chia'], lessonId: 'phan-so',
-  },
-  {
-    id: 'th.dien-tich', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 3',
-    title: 'Diện tích hình chữ nhật', essence: 'Diện tích là số ô vuông đơn vị phủ kín hình: dài × rộng là đếm theo hàng.',
-    standards: [g('Toán 3 · Hình học và đo lường · Diện tích'), cc('3.MD.C.7')], prereqs: ['th.phep-nhan'],
-  },
-  {
-    id: 'th.so-thap-phan', subject: 'toan', stage: 'tieuhoc', grade: 'Lớp 5',
-    title: 'Số thập phân', essence: 'Số thập phân là phân số có mẫu 10, 100, 1000… viết theo hàng.',
-    standards: [g('Toán 5 · Số thập phân'), cc('4.NF.C.6')], prereqs: ['th.phan-so'],
+    prereqs: ['tieuhoc.t2-chia'], gradeNum: 3, lessonId: 'phan-so',
   },
   {
     id: 'th.ngay-dem', subject: 'khoahoc', stage: 'tieuhoc', grade: 'Lớp 3',
     title: 'Vì sao có ngày và đêm?',
     essence: 'Trái Đất tự quay; nửa hướng về Mặt Trời là ngày, nửa quay đi là đêm.',
     standards: [g('Tự nhiên và Xã hội 3 · Trái Đất và bầu trời'), ng('5-ESS1-2')],
-    prereqs: [], lessonId: 'ngay-dem',
+    prereqs: [], gradeNum: 3, lessonId: 'ngay-dem',
   },
-  {
-    id: 'th.thuc-vat', subject: 'khoahoc', stage: 'tieuhoc', grade: 'Lớp 4',
-    title: 'Thực vật cần gì để sống', essence: 'Cây tự làm thức ăn từ ánh sáng, nước và không khí.',
-    standards: [g('Khoa học 4 · Thực vật và động vật'), ng('5-LS1-1')], prereqs: [],
-  },
-  {
-    id: 'th.vong-tuan-hoan-nuoc', subject: 'khoahoc', stage: 'tieuhoc', grade: 'Lớp 4',
-    title: 'Vòng tuần hoàn của nước', essence: 'Nước không mất đi, chỉ đổi dạng: bay hơi – ngưng tụ – mưa.',
-    standards: [g('Khoa học 4 · Chất — Nước')], prereqs: [],
-  },
-  {
-    id: 'th.van-ghep', subject: 'ngonngu', stage: 'tieuhoc', grade: 'Lớp 1',
-    title: 'Ghép âm – vần – thanh', essence: 'Tiếng = âm đầu + vần + thanh; đọc được là ghép được.',
-    standards: [g('Tiếng Việt 1 · Đọc thành tiếng')], prereqs: ['choi.chu-cai'],
-  },
-  {
-    id: 'th.y-chinh', subject: 'ngonngu', stage: 'tieuhoc', grade: 'Lớp 3–5',
-    title: 'Tìm ý chính của đoạn văn', essence: 'Ý chính là điều mọi câu khác cùng nói về.',
-    standards: [g('Tiếng Việt 3–5 · Đọc hiểu'), cc('RI.3.2')], prereqs: ['th.van-ghep'],
-  },
-  {
-    id: 'th.en-present', subject: 'tienganh', stage: 'tieuhoc', grade: 'Lớp 3–5',
-    title: 'Thì hiện tại đơn', essence: 'Thì hiện tại đơn nói về thói quen và sự thật luôn đúng.',
-    standards: [g('Tiếng Anh 3–5'), ce('A1')], prereqs: ['choi.en-sounds'],
-  },
-
-  // ───────── THCS ─────────
   {
     id: 'thcs.so-nguyen', subject: 'toan', stage: 'thcs', grade: 'Lớp 6',
     title: 'Số nguyên âm', essence: 'Số âm là khoảng cách về phía ngược lại của số 0 trên trục số.',
@@ -191,7 +70,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'thcs.bieu-thuc', subject: 'toan', stage: 'thcs', grade: 'Lớp 7',
     title: 'Biểu thức đại số', essence: 'Chữ thay cho một số chưa biết — viết một lần, dùng cho mọi giá trị.',
-    standards: [g('Toán 7 · Biểu thức đại số'), cc('6.EE.A.2')], prereqs: ['th.phep-nhan'],
+    standards: [g('Toán 7 · Biểu thức đại số'), cc('6.EE.A.2')], prereqs: ['tieuhoc.t2-nhan'],
   },
   {
     id: 'thcs.ti-le', subject: 'toan', stage: 'thcs', grade: 'Lớp 7',
@@ -210,7 +89,7 @@ export const SKILLS: Skill[] = [
     title: 'Định lí Pythagore',
     essence: 'Trong tam giác vuông, diện tích hình vuông dựng trên cạnh huyền bằng tổng hai hình vuông dựng trên hai cạnh góc vuông.',
     standards: [g('Toán 8 · Định lí Pythagore'), cc('8.G.B.6'), cc('8.G.B.7')],
-    prereqs: ['th.dien-tich'], lessonId: 'pythagore',
+    prereqs: ['tieuhoc.t3-chu-vi-dien-tich'], lessonId: 'pythagore',
   },
   {
     id: 'thcs.ham-bac-nhat', subject: 'toan', stage: 'thcs', grade: 'Lớp 8',
@@ -240,7 +119,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'thcs.te-bao', subject: 'khoahoc', stage: 'thcs', grade: 'Lớp 6',
     title: 'Tế bào — đơn vị của sự sống', essence: 'Mọi sinh vật đều được xây từ tế bào.',
-    standards: [g('KHTN 6 · Tế bào'), ng('MS-LS1-1')], prereqs: ['th.thuc-vat'],
+    standards: [g('KHTN 6 · Tế bào'), ng('MS-LS1-1')], prereqs: ['tieuhoc.kh4-thuc-vat'],
   },
   {
     id: 'thcs.nguyen-tu', subject: 'khoahoc', stage: 'thcs', grade: 'Lớp 7',
@@ -255,15 +134,13 @@ export const SKILLS: Skill[] = [
   {
     id: 'thcs.nghi-luan', subject: 'ngonngu', stage: 'thcs', grade: 'Lớp 6–9',
     title: 'Văn nghị luận', essence: 'Thuyết phục bằng luận điểm – lí lẽ – bằng chứng, không bằng cảm xúc suông.',
-    standards: [g('Ngữ văn 6–9 · Viết văn bản nghị luận'), cc('W.8.1')], prereqs: ['th.y-chinh'],
+    standards: [g('Ngữ văn 6–9 · Viết văn bản nghị luận'), cc('W.8.1')], prereqs: ['tieuhoc.tv-doc-hieu'],
   },
   {
     id: 'thcs.en-past', subject: 'tienganh', stage: 'thcs', grade: 'Lớp 6–9',
     title: 'Quá khứ đơn và hiện tại hoàn thành', essence: 'Quá khứ đơn: đã xong, có mốc. Hiện tại hoàn thành: còn liên quan đến bây giờ.',
-    standards: [g('Tiếng Anh 6–9'), ce('A2')], prereqs: ['th.en-present'],
+    standards: [g('Tiếng Anh 6–9'), ce('A2')], prereqs: ['tieuhoc.en-hien-tai-don'],
   },
-
-  // ───────── THPT ─────────
   {
     id: 'thpt.ham-bac-hai', subject: 'toan', stage: 'thpt', grade: 'Lớp 10',
     title: 'Hàm số bậc hai và đồ thị',
@@ -329,6 +206,9 @@ export const SKILLS: Skill[] = [
     standards: [g('Tiếng Anh 10–12'), ce('B1')], prereqs: ['thcs.en-past'],
   },
 ]
+
+/** Toàn bộ kỹ năng: bài viết riêng + bài soạn theo khuôn ở src/content. */
+export const SKILLS: Skill[] = [...LEGACY, ...CONTENT_SKILLS]
 
 export const SKILL_BY_ID: Record<string, Skill> = Object.fromEntries(SKILLS.map((s) => [s.id, s]))
 

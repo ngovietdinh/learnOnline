@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react'
 import type { Level } from '../core/stages'
 import type { Rng } from '../core/rng'
+import type { Seg } from '../core/speech'
 
 // Mọi bài học đều theo cùng một vòng "Hiểu bản chất" 6 bước:
 //   1. Tò mò     — một câu hỏi/hiện tượng khiến người học muốn biết.
@@ -26,6 +27,8 @@ export interface Question {
   prompt: string
   /** Câu đọc to (mặc định là prompt). */
   speak?: string
+  /** Lời đọc dạng đoạn (VD chèn từ tiếng Anh đọc bằng giọng Anh). Ưu tiên hơn speak. */
+  speakSegs?: Seg[]
   visual?: ReactNode
   choices: Choice[]
   /** Lời giải ngắn nhấn vào bản chất, hiện sau khi trả lời. */
@@ -37,8 +40,10 @@ export interface Question {
 export interface ExploreProps {
   /** Gọi khi người học đã tự khám phá đủ để rút ra quy luật. */
   onDiscover: () => void
-  say: (text: string) => void
+  say: (text: Seg | Seg[]) => void
 }
+
+export type GameKind = 'bongbay' | 'cauca' | 'chuotchui' | 'latthe'
 
 export interface TeachBack {
   prompt: string
@@ -53,7 +58,18 @@ export interface Lesson {
   title: string
   emoji: string
   hook: { text: string; visual?: ReactNode }
-  explore: { intro: string; Component: ComponentType<ExploreProps> }
+  explore: {
+    intro: string
+    Component: ComponentType<ExploreProps>
+    /** Mọi câu phần khám phá có thể nói — để thu sẵn giọng cô. */
+    lines?: Seg[]
+  }
+  /** 0 = mầm non; 1–5 = lớp ở tiểu học. */
+  grade?: number
+  /** Trò chơi phù hợp với bài (mặc định: bóng bay, câu cá, chuột chũi). */
+  games?: GameKind[]
+  /** Cặp thẻ cho trò lật thẻ: [mặt A, mặt B] — VD [🍎, "quả táo"], ["3 + 4", "7"]. */
+  pairs?: [string, string][]
   /** Trẻ 1–3 tuổi bỏ qua bước trừu tượng. */
   essence?: {
     bigIdea: string

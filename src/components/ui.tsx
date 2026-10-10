@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { speak } from '../core/speech'
+import { speak, type Seg } from '../core/speech'
 import { useActiveProfile, useStore } from '../core/store'
 import { stageForAge, type Stage } from '../core/stages'
 
@@ -13,14 +13,17 @@ export function useSay() {
   const stage = useStage()
   const pref = useStore((s) => s.settings.narrate)
   const on = pref ?? stage.narrate
-  return useCallback((text: string, force = false) => {
-    if (on || force) speak(text, { force: true })
-  }, [on])
+  return useCallback(
+    (text: Seg | Seg[], force = false) => {
+      if (on || force) speak(text, { force: true })
+    },
+    [on],
+  )
 }
 
-export function SpeakButton({ text, label = 'Nghe' }: { text: string; label?: string }) {
+export function SpeakButton({ text, label = 'Nghe cô đọc' }: { text: Seg | Seg[]; label?: string }) {
   return (
-    <button className="speak-btn" onClick={() => speak(text, { force: true })} aria-label={`${label}: ${text}`} title="Đọc to">
+    <button className="speak-btn" onClick={() => speak(text, { force: true })} aria-label={label} title="Nghe cô đọc">
       🔊
     </button>
   )

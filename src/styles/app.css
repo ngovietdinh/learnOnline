@@ -2900,3 +2900,12 @@ input[type='range'] {
   display: inline-block;
   animation: bob 1.4s ease-in-out infinite;
 }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

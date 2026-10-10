@@ -3,7 +3,7 @@ import { useRoute, go } from './core/router'
 import { useActiveProfile, useMyProgress, useStore } from './core/store'
 import { stageForAge } from './core/stages'
 import { setSoundEnabled, startMusic, stopMusic, sfx } from './core/sound'
-import { canSpeak, hasVietnameseVoice, onVoicesChanged, setNarrate, setVoiceProfile } from './core/speech'
+import { canSpeak, hasRecordedVoice, hasVietnameseVoice, loadVoiceManifest, onVoicesChanged, setNarrate, setVoiceProfile, setVoiceStyle } from './core/speech'
 import { AmbientBackground, FxLayer } from './components/Effects'
 import { dueReviews } from './core/progress'
 import { SKILL_BY_ID } from './core/curriculum'
@@ -24,7 +24,13 @@ export default function App() {
 
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound])
   useEffect(() => setNarrate(settings.narrate ?? stage.narrate), [settings.narrate, stage.narrate])
-  useEffect(() => setVoiceProfile(stage.voice.rate, stage.voice.pitch), [stage])
+  useEffect(() => {
+    setVoiceProfile(stage.voice.rate, stage.voice.pitch)
+    setVoiceStyle(stage.id === 'mam' || stage.id === 'choi' ? 'be' : 'hs')
+  }, [stage])
+  useEffect(() => {
+    void loadVoiceManifest()
+  }, [])
 
   // Nhạc nền: trình duyệt chỉ cho phát sau lần chạm đầu tiên.
   const musicOn = settings.sound && (settings.music ?? stage.music) && !!me
@@ -186,8 +192,8 @@ function VoiceNotice() {
   useEffect(() => {
     if (!canSpeak()) return
     // Danh sách giọng nạp chậm trên một số trình duyệt — chờ một chút rồi mới kết luận.
-    const t = setTimeout(() => setMissing(!hasVietnameseVoice()), 2500)
-    const off = onVoicesChanged(() => setMissing(!hasVietnameseVoice()))
+    const t = setTimeout(() => setMissing(!hasVietnameseVoice() && !hasRecordedVoice()), 2500)
+    const off = onVoicesChanged(() => setMissing(!hasVietnameseVoice() && !hasRecordedVoice()))
     return () => {
       clearTimeout(t)
       off()

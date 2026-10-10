@@ -4,6 +4,8 @@
 // • Chia câu để không bị cắt giữa chừng (lỗi của Chrome với câu dài).
 
 import { duckMusic } from './sound'
+import { voiceKey, type VoiceLang, type VoiceStyle } from './voiceKey'
+export type { VoiceStyle } from './voiceKey'
 
 let narrateOn = true
 let rate = 0.95
@@ -58,7 +60,9 @@ export function hasVietnameseVoice(): boolean {
 
 export function onVoicesChanged(f: () => void) {
   listeners.add(f)
-  return () => listeners.delete(f)
+  return () => {
+    listeners.delete(f)
+  }
 }
 
 const SUP: Record<string, string> = { '²': ' bình phương', '³': ' lập phương' }
@@ -122,46 +126,149 @@ function chunks(text: string): string[] {
   return out
 }
 
-let speakingCount = 0
+// ───────────────────────── Phát lời: tệp thu sẵn → giọng của máy ─────────────────────────
 
-export function speak(text: string, opts: { force?: boolean; queue?: boolean; lang?: string } = {}) {
-  if (!canSpeak() || (!narrateOn && !opts.force) || !text) return
+export type Seg = string | { text: string; lang: VoiceLang }
+
+let style: VoiceStyle = 'hs'
+let clipBase = 'voice/'
+let manifest: Set<string> = new Set()
+let generation = 0
+let current: HTMLAudioElement | null = null
+const speakingListeners = new Set<(on: boolean) => void>()
+
+export function setVoiceStyle(s: VoiceStyle) {
+  style = s
+}
+export function getVoiceStyle(): VoiceStyle {
+  return style
+}
+
+/** Nạp danh sách tệp giọng thu sẵn (tạo bởi scripts/tao-giong-doc). Không có cũng không sao. */
+export async function loadVoiceManifest(base = 'voice/') {
+  clipBase = base
   try {
+    const r = await fetch(`${base}manifest.json`, { cache: 'no-cache' })
+    if (!r.ok) return
+    const keys = (await r.json()) as string[]
+    manifest = new Set(keys)
+  } catch {
+    /* chưa có giọng thu sẵn — dùng giọng của máy */
+  }
+}
+
+export function hasRecordedVoice(): boolean {
+  return manifest.size > 0
+}
+
+/** Theo dõi lúc đang nói — để nhân vật cô giáo mấp máy môi. */
+export function onSpeaking(f: (on: boolean) => void) {
+  speakingListeners.add(f)
+  return () => {
+    speakingListeners.delete(f)
+  }
+}
+function setSpeaking(on: boolean) {
+  duckMusic(on)
+  speakingListeners.forEach((f) => f(on))
+}
+
+/** Văn bản thật sự được đọc của một đoạn — dùng cho cả tạo khoá lẫn tạo giọng. */
+export function spokenText(seg: Seg): { text: string; lang: VoiceLang } {
+  if (typeof seg !== 'string') return { text: seg.lang === 'vi' ? toSpeech(seg.text) : seg.text.trim(), lang: seg.lang }
+  return { text: toSpeech(seg), lang: 'vi' }
+}
+
+function playClip(url: string, gen: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (gen !== generation) return resolve(true)
+    const a = new Audio(url)
+    current = a
+    a.onended = () => resolve(true)
+    a.onerror = () => resolve(false)
+    a.play().catch(() => resolve(false))
+  })
+}
+
+function ttsSay(text: string, lang: VoiceLang, gen: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (!canSpeak() || gen !== generation) return resolve()
     const synth = window.speechSynthesis
-    if (!opts.queue) synth.cancel()
-    const isVi = (opts.lang ?? 'vi-VN').startsWith('vi')
-    const voice = isVi ? chosen ?? pickVoice() : null
-    for (const c of chunks(isVi ? toSpeech(text) : text)) {
+    const parts = lang === 'vi' ? chunks(text) : [text]
+    let left = parts.length
+    if (!left) return resolve()
+    const voice = lang === 'vi' ? chosen ?? pickVoice() : englishVoice()
+    for (const c of parts) {
       const u = new SpeechSynthesisUtterance(c)
-      u.lang = opts.lang ?? 'vi-VN'
+      u.lang = lang === 'vi' ? 'vi-VN' : 'en-US'
       if (voice) u.voice = voice
-      u.rate = rate
+      u.rate = lang === 'en' ? 0.85 : rate
       u.pitch = pitch
-      u.onstart = () => {
-        speakingCount++
-        duckMusic(true)
-      }
       const end = () => {
-        speakingCount = Math.max(0, speakingCount - 1)
-        if (!speakingCount) duckMusic(false)
+        if (--left <= 0) resolve()
       }
       u.onend = end
       u.onerror = end
       synth.speak(u)
     }
-  } catch {
-    /* thiết bị không hỗ trợ — bỏ qua */
-  }
+    // Phòng khi trình duyệt không báo kết thúc.
+    setTimeout(resolve, 400 + text.length * 120)
+  })
 }
+
+function englishVoice(): SpeechSynthesisVoice | null {
+  if (!canSpeak()) return null
+  const en = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('en'))
+  return en.sort((a, b) => Number(/natural|online|google/i.test(b.name)) - Number(/natural|online|google/i.test(a.name)))[0] ?? null
+}
+
+/**
+ * Đọc to. Truyền một câu hoặc một dãy đoạn — mỗi đoạn được tìm tệp giọng thu sẵn riêng,
+ * nên hãy chia lời thành các đoạn cố định (VD: [lời khen, lời giải]).
+ */
+export function speak(input: Seg | Seg[], opts: { force?: boolean; queue?: boolean } = {}) {
+  if ((!narrateOn && !opts.force) || typeof window === 'undefined') return
+  const segs = (Array.isArray(input) ? input : [input]).filter((s) => (typeof s === 'string' ? s.trim() : s.text.trim()))
+  if (!segs.length) return
+  if (!opts.queue) stopSpeaking()
+  const gen = generation
+  const run = async () => {
+    setSpeaking(true)
+    for (const seg of segs) {
+      if (gen !== generation) return
+      const { text, lang } = spokenText(seg)
+      if (!text) continue
+      const key = voiceKey(text, style, lang)
+      let ok = false
+      if (manifest.has(key)) ok = await playClip(`${clipBase}${key}.mp3`, gen)
+      if (!ok && gen === generation) await ttsSay(text, lang, gen)
+    }
+    if (gen === generation) setSpeaking(false)
+  }
+  queueTail = opts.queue ? queueTail.then(run) : run()
+}
+let queueTail: Promise<void> = Promise.resolve()
 
 export function stopSpeaking() {
+  generation++
+  if (current) {
+    current.pause()
+    current = null
+  }
   if (canSpeak()) window.speechSynthesis.cancel()
-  speakingCount = 0
-  duckMusic(false)
+  queueTail = Promise.resolve()
+  setSpeaking(false)
 }
 
-const PRAISE = ['Giỏi quá!', 'Tuyệt vời!', 'Chính xác!', 'Xuất sắc!', 'Đúng rồi, hay lắm!', 'Quá đỉnh!', 'Em làm tốt lắm!']
-const CHEER = ['Không sao, mình xem lại nhé!', 'Gần đúng rồi đó!', 'Sai một chút thôi, cố lên!', 'Mình cùng tìm chỗ nhầm nhé!']
+// Lời khen / động viên theo giọng cô: mầm non xưng "cô – con", tiểu học "cô – em".
+export const PRAISE: Record<VoiceStyle, string[]> = {
+  be: ['Con giỏi quá!', 'Đúng rồi, con ơi!', 'Hoan hô con!', 'Cô khen con nè!', 'Tuyệt vời quá!', 'Con thông minh quá!', 'Giỏi lắm, cô thưởng con một ngôi sao nhé!'],
+  hs: ['Em giỏi lắm!', 'Chính xác!', 'Tuyệt vời!', 'Xuất sắc!', 'Đúng rồi, em làm tốt lắm!', 'Cô khen em!', 'Quá đỉnh luôn!'],
+}
+export const CHEER: Record<VoiceStyle, string[]> = {
+  be: ['Ồ, chưa đúng rồi. Con thử lại nhé!', 'Không sao đâu con, mình thử lần nữa nào!', 'Con nhìn kỹ lại xem nào!'],
+  hs: ['Chưa đúng rồi, mình cùng xem lại nhé!', 'Gần đúng rồi đó em!', 'Không sao, sai là để học mà!', 'Em xem chỗ dễ nhầm này nhé!'],
+}
 const pickOne = (a: string[]) => a[Math.floor(Math.random() * a.length)]
-export const praise = () => pickOne(PRAISE)
-export const cheer = () => pickOne(CHEER)
+export const praise = () => pickOne(PRAISE[style])
+export const cheer = () => pickOne(CHEER[style])

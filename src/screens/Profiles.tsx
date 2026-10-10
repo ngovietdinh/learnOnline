@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../core/store'
-import { STAGES, stageForAge } from '../core/stages'
+import { FOCUS_STAGES, gradeForAge, MAX_AGE, STAGES, stageForAge } from '../core/stages'
+import { Teacher } from '../components/Teacher'
 import { go } from '../core/router'
 import { sfx } from '../core/sound'
 
@@ -14,9 +15,9 @@ export function ProfilesScreen() {
   return (
     <div className="profiles-screen">
       <div className="brand">
-        <span className="brand-logo">🌱</span>
+        <Teacher size={120} mood="happy" />
         <h1>Học Bản Chất</h1>
-        <p>Học một lần — hiểu tận gốc. Cho bé từ 1 đến 18 tuổi.</p>
+        <p>Học mà chơi, chơi mà học — hiểu tận gốc. Cho bé mầm non và tiểu học (1–11 tuổi).</p>
       </div>
       {!creating ? (
         <>
@@ -37,7 +38,7 @@ export function ProfilesScreen() {
                   <span className="profile-avatar">{p.avatar}</span>
                   <b>{p.name}</b>
                   <small>
-                    {p.age} tuổi · {st.name}
+                    {p.age} tuổi · {st.id === 'tieuhoc' ? `Lớp ${p.grade ?? gradeForAge(p.age)}` : st.grades}
                   </small>
                 </button>
               )
@@ -66,14 +67,16 @@ function CreateProfile({ onDone, canCancel }: { onDone: () => void; canCancel: b
   const [name, setName] = useState('')
   const [age, setAge] = useState(7)
   const [avatar, setAvatar] = useState(AVATARS[1])
+  const [grade, setGrade] = useState<number | null>(null)
   const st = stageForAge(age)
+  const g = grade ?? gradeForAge(age)
   return (
     <form
       className="create-profile panel"
       onSubmit={(e) => {
         e.preventDefault()
         if (!name.trim()) return
-        addProfile({ name: name.trim(), age, avatar })
+        addProfile({ name: name.trim(), age, avatar, grade: st.id === 'tieuhoc' ? g : undefined })
         sfx.celebrate()
         onDone()
         go({ name: 'home' })
@@ -86,8 +89,18 @@ function CreateProfile({ onDone, canCancel }: { onDone: () => void; canCancel: b
       </label>
       <label>
         Tuổi: <b>{age}</b>
-        <input type="range" min={1} max={18} value={age} onChange={(e) => setAge(+e.target.value)} />
+        <input type="range" min={1} max={MAX_AGE} value={age} onChange={(e) => (setAge(+e.target.value), setGrade(null))} />
       </label>
+      {st.id === 'tieuhoc' && (
+        <div className="grade-pick" role="radiogroup" aria-label="Chọn lớp">
+          <span>Bé đang học:</span>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button type="button" key={n} role="radio" aria-checked={n === g} className={`chip ${n === g ? 'now' : ''}`} onClick={() => setGrade(n)}>
+              Lớp {n}
+            </button>
+          ))}
+        </div>
+      )}
       <div className={`stage-preview s-${st.id}`}>
         <span>{st.mascot}</span>
         <div>
@@ -125,7 +138,7 @@ function CreateProfile({ onDone, canCancel }: { onDone: () => void; canCancel: b
 function StagesStrip() {
   return (
     <div className="stages-strip">
-      {STAGES.map((s) => (
+      {STAGES.filter((s) => FOCUS_STAGES.includes(s.id)).map((s) => (
         <div key={s.id} className={`stage-pill s-${s.id}`}>
           <span>{s.mascot}</span>
           <b>{s.name}</b>

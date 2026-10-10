@@ -25,6 +25,29 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      # Giọng cô giáo thật: liệt kê mọi câu cô nói rồi tạo giọng (chỉ tạo câu mới, phần cũ lấy từ cache).
+      # Bước này lỗi cũng không sao — ứng dụng tự dùng giọng đọc của máy cho câu chưa có.
+      - name: Liệt kê lời cô
+        run: npx vite-node scripts/thu-giong.ts
+      - uses: actions/cache/restore@v4
+        with:
+          path: .voice-cache
+          key: giong-co-${{ github.run_id }}
+          restore-keys: giong-co-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tạo giọng cô giáo
+        continue-on-error: true
+        timeout-minutes: 50
+        run: |
+          pip install -q edge-tts==7.2.8
+          python scripts/tao-giong.py scripts/out/loi-co.json .voice-cache dist/voice --phut 40
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .voice-cache
+          key: giong-co-${{ github.run_id }}
       - name: Chuẩn bị trang
         run: |
           touch dist/.nojekyll

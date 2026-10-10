@@ -1,6 +1,16 @@
 # Học Bản Chất — Tài liệu thiết kế
 
-> Nền tảng học trực tuyến cho người học từ **1 đến 18 tuổi**: giao diện sống động, "lớn lên" cùng người học; kiến thức bám chuẩn; đủ cấp độ từ thấp đến cao; mỗi bài được thiết kế để **hiểu bản chất ngay trong lần học chính thức**.
+> Nền tảng học trực tuyến, **tập trung toàn bộ vào mầm non và tiểu học (1–11 tuổi)**: học mà chơi, giọng cô giáo đọc mọi lời, nhạc nền, hiệu ứng rực rỡ; kiến thức bám chuẩn; đủ cấp độ từ thấp đến cao; mỗi bài được thiết kế để **hiểu bản chất ngay trong lần học chính thức**. (Khung THCS – THPT vẫn giữ trong mã nhưng không hiện trên giao diện.)
+
+## 0. Trọng tâm mầm non – tiểu học
+
+| | Nội dung |
+|---|---|
+| Nội dung | 125 bài: mầm non 37 (Mầm 1–3 tuổi và Chồi 3–6 tuổi), lớp 1: 16, lớp 2: 15, lớp 3: 19, lớp 4: 20, lớp 5: 18 — Toán, Tiếng Việt, Khoa học / TN-XH, Tiếng Anh. Mỗi bài đủ các bước, mô phỏng tự tay thao tác, kho 12 câu hỏi cố định cho mỗi mức độ. |
+| Học xen chơi | Bước 🎮 *Trò chơi* nằm giữa Luyện tập và Giảng lại: Bóng bay, Câu cá, Đập chuột chũi, Lật thẻ (cặp thẻ do từng bài khai báo). Trang chính có Góc trò chơi chọn chủ đề tự do. |
+| Giọng cô giáo | Mọi lời cô nói được ghép từ các đoạn cố định (`src/core/script.ts`), nên liệt kê được hết (`scripts/thu-giong.ts`, ~10 nghìn câu) và thu sẵn bằng giọng thần kinh `vi-VN-HoaiMyNeural` (`scripts/tao-giong.py`): giọng *cô mầm non* chậm hơn 12%, cao và ấm hơn; giọng *cô tiểu học* tự nhiên. Ứng dụng tra tệp theo khoá `voiceKey(văn bản đọc, kiểu giọng, ngôn ngữ)`; thiếu tệp thì đọc bằng giọng của máy. |
+| Nhạc nền | 3 bản tự sáng tác bằng WebAudio (trang chính / giờ học / giờ chơi), tự hạ âm lượng khi cô nói; phụ huynh tắt được. |
+| Giao diện | Cô giáo hoạt hình (mấp máy môi theo giọng, biểu cảm vui / suy nghĩ / khen), bóng bay vẽ bằng CSS nhiều màu tươi, pháo hoa, mưa pháo giấy; bố cục câu hỏi – sân chơi song song trên màn hình rộng. |
 
 ---
 
@@ -120,7 +130,7 @@ Một và nhiều → Đếm đến 10 → Tách–gộp ─┐
 
 - **Giao diện**: React 18 + TypeScript + Vite; trạng thái bằng Zustand (lưu localStorage). Không cần máy chủ — triển khai lên bất kỳ hosting tĩnh nào.
 - **Đồ hoạ**: SVG + CSS animation (nhẹ, sắc nét mọi màn hình, chạy được trên máy yếu).
-- **Âm thanh**: WebAudio tổng hợp (không cần tệp). **Giọng đọc**: Web Speech API tiếng Việt.
+- **Âm thanh**: WebAudio tổng hợp (không cần tệp). **Giọng đọc**: tệp thu sẵn `voice/<khoá>.mp3` + `voice/manifest.json` (tạo trong GitHub Actions), dự phòng Web Speech API tiếng Việt.
 - **Định tuyến**: hash (`#/hoc/phan-so`, `#/ky-nang/...`, `#/on-tap`, `#/chuong-trinh`, `#/phu-huynh`).
 
 ```
@@ -145,8 +155,9 @@ docs/          THIET-KE.md (tài liệu này)
 
 | Giai đoạn | Nội dung |
 |---|---|
-| **v0.1 (hiện tại)** | Khung đầy đủ: 5 giao diện tuổi, đồ thị 49 kỹ năng bám chuẩn, 10 bài tương tác đủ 6 bước trải đều 1–18 tuổi, luyện tập leo thang, ôn giãn cách, báo cáo phụ huynh. |
-| v0.2 | Phủ toàn bộ kỹ năng trong đồ thị (ưu tiên Toán – Khoa học); thêm Tiếng Việt (ghép vần có âm thanh), Tiếng Anh (phát âm, nghe hiểu); ghi âm giọng đọc thật cho bé nhỏ. |
+| v0.1 | Khung đầy đủ: 5 giao diện tuổi, đồ thị 49 kỹ năng bám chuẩn, 10 bài tương tác đủ 6 bước trải đều 1–18 tuổi, luyện tập leo thang, ôn giãn cách, báo cáo phụ huynh. |
+| **v0.2 (hiện tại)** | Tập trung mầm non – tiểu học: 125 bài Toán, Tiếng Việt, Khoa học, Tiếng Anh; trò chơi xen bài học; giọng cô giáo thu sẵn; nhạc nền. |
+| v0.25 | Thu giọng người thật (cô giáo mầm non) cho các câu hay dùng nhất; thêm bài Lịch sử – Địa lí lớp 4–5, Đạo đức; tập viết chữ trên màn hình cảm ứng. |
 | v0.3 | Ứng dụng cài được, chạy ngoại tuyến (PWA); tài khoản và đồng bộ nhiều thiết bị; lớp học cho giáo viên (giao bài, xem ngộ nhận cả lớp). |
 | v0.4 | Trợ giảng AI chấm lời tự giải thích, hỏi "vì sao" theo kiểu Socrates; chẩn đoán đầu vào toàn đồ thị để xếp lộ trình cá nhân. |
 | v1.0 | Phủ đủ chương trình GDPT 2018 lớp 1–12 các môn cốt lõi; công cụ soạn bài cho giáo viên theo khuôn 6 bước; kiểm định hiệu quả học tập (A/B, đo khả năng giữ kiến thức sau 30 ngày). |

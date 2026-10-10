@@ -49,7 +49,7 @@ export function numberLineExplore(intro: string, puzzles: [number, number, '+' |
               <span>{i}</span>
             </div>
           ))}
-          <div className="frog" style={{ left: `calc(${(pos / max) * 100}% )` }} key={pos}>
+          <div className="frog" style={{ left: `${((pos + 0.5) / (max + 1)) * 100}%` }} key={pos}>
             🐸
           </div>
         </div>

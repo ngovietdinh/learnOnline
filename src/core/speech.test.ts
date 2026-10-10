@@ -17,6 +17,8 @@ describe('đọc ký hiệu toán bằng tiếng Việt', () => {
     ['3x − 4 = 11', '3x trừ 4 bằng 11'],
     ['x = −3', 'x bằng âm 3'],
     ['1/2 > 1/3', '1 phần 2 lớn hơn 1 phần 3'],
+    ['35 : 5 = 7', '35 chia 5 bằng 7'],
+    ['Ghi nhớ nhé: 3 bài', 'Ghi nhớ nhé: 3 bài'],
   ])('%s', (input, out) => {
     expect(toSpeech(input)).toBe(out)
   })

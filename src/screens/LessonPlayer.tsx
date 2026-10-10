@@ -3,35 +3,38 @@ import type { Lesson, Question } from '../lessons/types'
 import type { Skill } from '../core/curriculum'
 import { LEVELS, type Level } from '../core/stages'
 import { answerPractice, practiceRules, startPractice, type PracticeRules, type PracticeState } from '../core/mastery'
-import { randomRng } from '../core/rng'
 import { sfx } from '../core/sound'
 import { stopSpeaking } from '../core/speech'
 import { useMyProgress, useStore } from '../core/store'
 import { recommend } from '../core/progress'
 import { go } from '../core/router'
 import { QuestionView } from '../components/QuestionView'
-import { Confetti, Mascot, SpeakButton, Toast, useSay, useStage } from '../components/ui'
+import { Confetti, SpeakButton, Toast, useSay, useStage } from '../components/ui'
+import { Teacher } from '../components/Teacher'
+import { canPlay, GameRound, GAME_META } from '../games/Games'
+import { essenceSegs, randomPoolQuestion, rememberSegs, teachSegs } from '../core/script'
+import { recommendIn, defaultView } from '../core/views'
+import { useActiveProfile } from '../core/store'
+import type { GameKind } from '../lessons/types'
+import type { Seg } from '../core/speech'
 import { centerOf, fx } from '../core/fx'
 import { praise } from '../core/speech'
 
-type Step = 'hook' | 'explore' | 'essence' | 'practice' | 'teach' | 'remember'
+type Step = 'hook' | 'explore' | 'essence' | 'game' | 'practice' | 'teach' | 'remember'
 
 const STEP_META: Record<Step, { icon: string; name: string }> = {
   hook: { icon: '❓', name: 'Tò mò' },
   explore: { icon: '🔍', name: 'Khám phá' },
   essence: { icon: '💎', name: 'Bản chất' },
+  game: { icon: '🎮', name: 'Trò chơi' },
   practice: { icon: '🎯', name: 'Luyện tập' },
   teach: { icon: '🗣️', name: 'Giảng lại' },
   remember: { icon: '🧠', name: 'Ghi nhớ' },
 }
 
+/** Câu hỏi lấy từ "kho" cố định của bài (mỗi câu đều có giọng cô thu sẵn), tránh lặp câu vừa hỏi. */
 function nextQuestion(lesson: Lesson, level: Level, prev?: Question): Question {
-  // Tránh lặp lại y hệt câu vừa hỏi.
-  for (let i = 0; i < 8; i++) {
-    const q = lesson.practice(level, randomRng)
-    if (!prev || q.prompt !== prev.prompt) return q
-  }
-  return lesson.practice(level, randomRng)
+  return randomPoolQuestion(lesson, level, prev?.prompt)
 }
 
 export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: Skill; mode: 'learn' | 'test' }) {
@@ -41,15 +44,25 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
   const addXp = useStore((s) => s.addXp)
   const progress = useMyProgress()
 
+  const me = useActiveProfile()
+  const gameKind = useMemo<GameKind | null>(() => {
+    if (mode === 'test') return null
+    const kinds = (lesson.games ?? ['bongbay', 'cauca', 'chuotchui']).filter((k) => canPlay(lesson, k))
+    return kinds.length ? kinds[Math.floor(Math.random() * kinds.length)] : null
+  }, [lesson, mode])
   const steps = useMemo<Step[]>(() => {
     if (mode === 'test') return ['practice', 'remember']
     const s: Step[] = ['hook', 'explore']
     if (lesson.essence) s.push('essence')
+    // Bé mầm non: chơi trước rồi luyện; tiểu học: luyện xong được chơi thưởng.
+    const young = stage.id === 'mam' || stage.id === 'choi'
+    if (young && gameKind) s.push('game')
     s.push('practice')
+    if (!young && gameKind) s.push('game')
     if (lesson.teachBack && stage.teachBack) s.push('teach')
     s.push('remember')
     return s
-  }, [lesson, stage, mode])
+  }, [lesson, stage, mode, gameKind])
 
   const [stepIdx, setStepIdx] = useState(0)
   const step = steps[stepIdx]
@@ -92,7 +105,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
     if (step === 'explore') say(lesson.explore.intro)
     if (step === 'essence' && lesson.essence) {
       // Đọc trọn phần bản chất: ý chính, các lý do, hình dung.
-      say([lesson.essence.bigIdea, ...lesson.essence.points, lesson.essence.analogy ? `Hình dung: ${lesson.essence.analogy}` : ''].join('. '))
+      say(essenceSegs(lesson))
       sfx.sparkle()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,9 +164,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
   useEffect(() => {
     if (step === 'remember') {
       finish(ps)
-      const congrats = ps.mastered
-        ? `${praise()} Em đã vững bài ${lesson.title}. Ghi nhớ nhé: ${lesson.remember.join('. ')}.`
-        : `Em đã tiến bộ rồi! Ghi nhớ nhé: ${lesson.remember.join('. ')}.`
+      const congrats = ps.mastered ? [praise(), ...rememberSegs(lesson, true)] : rememberSegs(lesson, false)
       if (ps.mastered) {
         sfx.celebrate()
         setTimeout(() => fx.fireworks(7, sfx.firework), 600)
@@ -171,7 +182,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
 
   const Explore = lesson.explore.Component
   // Ở bước cuối, kết quả đã được lưu nên gợi ý dựa trên tiến độ mới nhất.
-  const recommendNext = step === 'remember' ? recommend(stage.id, progress) : undefined
+  const recommendNext = step === 'remember' ? (me ? recommendIn(defaultView(me), progress) : undefined) ?? recommend(stage.id, progress) : undefined
 
   return (
     <div className="player">
@@ -202,9 +213,12 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
         {step === 'hook' && (
           <section className="step-hook">
             <div className="hook-visual">{lesson.hook.visual}</div>
-            <Mascot emoji={stage.mascot} mood="think">
-              {lesson.hook.text} <SpeakButton text={lesson.hook.text} />
-            </Mascot>
+            <div className="teacher-say">
+              <Teacher size={stage.readsAlone ? 120 : 150} mood="think" />
+              <div className="bubble">
+                {lesson.hook.text} <SpeakButton text={lesson.hook.text} />
+              </div>
+            </div>
             <button className="btn btn-primary btn-big" onClick={next}>
               {stage.readsAlone ? 'Cùng tìm hiểu nào ➜' : '▶️ Chơi nào!'}
             </button>
@@ -249,7 +263,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
           <section className="step-practice">
             <div className="practice-top">
               <span className={`mini-mascot react-${mood}`} key={`${qKey}-${mood}`} aria-hidden>
-                {stage.mascot}
+                <Teacher size={64} mood={mood === 'happy' ? 'happy' : mood === 'oops' ? 'oops' : 'idle'} />
               </span>
               <div className="mastery-bar" aria-label="Tiến độ đến khi vững">
               <div className="mastery-fill" style={{ width: `${Math.round(masteryProgress * 100)}%` }} />
@@ -282,6 +296,26 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
           </section>
         )}
 
+        {step === 'game' && gameKind && (
+          <section className="step-game">
+            <GameRound
+              lesson={lesson}
+              kind={gameKind}
+              level={(Math.max(1, Math.min(ps.level, stage.maxLevel)) as Level)}
+              rounds={stage.id === 'mam' ? 4 : 5}
+              onDone={(stars) => {
+                addXp(stars * 5)
+                next()
+              }}
+            />
+            <div className="row-center">
+              <button className="btn btn-ghost" onClick={next}>
+                Bỏ qua trò {GAME_META[gameKind].name} ➜
+              </button>
+            </div>
+          </section>
+        )}
+
         {step === 'teach' && lesson.teachBack && (
           <TeachBackStep
             tb={lesson.teachBack}
@@ -307,13 +341,16 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
                 </span>
               </div>
             )}
-            <Mascot emoji={stage.mascot} mood={ps.mastered ? 'happy' : 'think'}>
-              {ps.mastered
-                ? mode === 'test'
-                  ? 'Em đã biết vững bài này rồi! Mình sẽ hẹn ôn lại để nhớ thật lâu.'
-                  : 'Tuyệt vời! Em đã hiểu và vững bài này. Hẹn em ôn lại vào ngày mai để nhớ lâu nhé!'
-                : 'Em đã tiến bộ rồi! Ngày mai mình luyện thêm một chút để thật vững nhé.'}
-            </Mascot>
+            <div className="teacher-say">
+              <Teacher size={110} mood={ps.mastered ? 'cheer' : 'idle'} />
+              <div className="bubble">
+                {ps.mastered
+                  ? mode === 'test'
+                    ? 'Em đã biết vững bài này rồi! Mình sẽ hẹn ôn lại để nhớ thật lâu.'
+                    : 'Tuyệt vời! Em đã hiểu và vững bài này. Hẹn em ôn lại vào ngày mai để nhớ lâu nhé!'
+                  : 'Em đã tiến bộ rồi! Ngày mai mình luyện thêm một chút để thật vững nhé.'}
+              </div>
+            </div>
             <div className="memory-cards">
               {lesson.remember.map((r, i) => (
                 <div key={i} className="memory-card" style={{ animationDelay: `${i * 0.12}s` }}>
@@ -374,7 +411,7 @@ function TeachBackStep({
   onDone,
 }: {
   tb: NonNullable<Lesson['teachBack']>
-  say: (t: string) => void
+  say: (t: Seg | Seg[]) => void
   onMistake: () => void
   explanation: string
   setExplanation: (s: string) => void
@@ -382,7 +419,7 @@ function TeachBackStep({
 }) {
   const [picked, setPicked] = useState<number[]>([])
   const solved = picked.some((i) => tb.options[i].correct)
-  useEffect(() => say(`${tb.prompt} ${tb.options.map((o, i) => `Bạn thứ ${i + 1} nói: ${o.text}`).join('. ')}`), [say, tb])
+  useEffect(() => say(teachSegs(tb)), [say, tb])
   return (
     <section className="step-teach">
       <h3>

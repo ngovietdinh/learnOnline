@@ -15,6 +15,9 @@ export const GAME_META: Record<GameKind, { name: string; emoji: string; intro: s
   latthe: { name: 'Lật thẻ', emoji: '🃏', intro: 'Trò chơi lật thẻ! Tìm hai thẻ giống nhau nhé!' },
 }
 
+/** Sắc màu tươi cho bóng bay, cá: đỏ, xanh dương, vàng, xanh lá, tím, cam. */
+const BRIGHT = [352, 205, 45, 140, 275, 22]
+
 /** Câu hỏi hợp để chơi: lựa chọn ngắn (hoặc là hình). */
 function playable(q: Question) {
   return q.choices.length >= 2 && q.choices.every((c) => c.visual || (c.label.length > 0 && c.label.length <= 16))
@@ -155,11 +158,11 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
           <button
             key={`${q.prompt}-${i}`}
             className={`target t-${kind} ${gone.includes(i) ? 'gone' : ''} ${hit === i ? 'hit' : ''}`}
-            style={{ ['--slot' as string]: layout[i], ['--d' as string]: `${(i * 0.7 + layout[i] * 0.3).toFixed(2)}s`, ['--hue' as string]: (layout[i] * 57) % 360 }}
+            style={{ ['--slot' as string]: layout[i], ['--col' as string]: layout[i] % 3, ['--row' as string]: Math.floor(layout[i] / 3), ['--d' as string]: `${(i * 0.7 + layout[i] * 0.3).toFixed(2)}s`, ['--hue' as string]: BRIGHT[layout[i] % BRIGHT.length] }}
             onClick={(e) => tap(i, e.currentTarget)}
             aria-label={c.label || 'lựa chọn'}
           >
-            <span className="t-body">{kind === 'bongbay' ? '🎈' : kind === 'cauca' ? '🐟' : '🐹'}</span>
+            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body">{kind === 'cauca' ? '🐟' : '🐹'}</span>}
             <span className="t-label">{c.visual ?? c.label}</span>
             {kind === 'bongbay' && <span className="t-string" />}
           </button>

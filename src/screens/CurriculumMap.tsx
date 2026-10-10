@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { FRAMEWORKS, FRAMEWORK_SHORT, SKILLS, SUBJECTS, type Framework, type SubjectId } from '../core/curriculum'
-import { LEVELS, STAGES } from '../core/stages'
+import { FRAMEWORKS, FRAMEWORK_SHORT, SUBJECTS, type Framework, type SubjectId } from '../core/curriculum'
+import { LEVELS } from '../core/stages'
+import { viewSkills, VIEWS } from '../core/views'
 import { useMyProgress } from '../core/store'
 import { skillState } from '../core/progress'
 import { go } from '../core/router'
@@ -19,14 +20,13 @@ export function CurriculumMap() {
   const [subject, setSubject] = useState<SubjectId | 'all'>('all')
   const subjects = Object.keys(SUBJECTS) as SubjectId[]
   const shown = subject === 'all' ? subjects : [subject]
-  const playable = SKILLS.filter((s) => s.lessonId).length
+  const playable = VIEWS.reduce((n, v) => n + viewSkills(v.id).length, 0)
 
   return (
     <div className="map-screen">
-      <h2>🗺️ Chương trình học 1–18 tuổi</h2>
+      <h2>🗺️ Chương trình học mầm non & tiểu học</h2>
       <p className="muted">
-        {SKILLS.length} kỹ năng cốt lõi nối thành một đồ thị tri thức liên tục từ nhà trẻ đến lớp 12 · {playable} bài tương tác đầy đủ · bám{' '}
-        {Object.keys(FRAMEWORKS).length} bộ chuẩn.
+        {playable} bài học tương tác đầy đủ từ nhà trẻ đến lớp 5, nối thành một đồ thị tri thức liên tục · bám {Object.keys(FRAMEWORKS).length} bộ chuẩn · mỗi bài có trò chơi và giọng cô đọc.
       </p>
 
       <section className="loop">
@@ -52,7 +52,7 @@ export function CurriculumMap() {
           ))}
         </div>
         <p className="muted">
-          Bé 1–3 tuổi dừng ở mức 1, 3–6 tuổi mức 2, tiểu học mức 3, THCS – THPT đủ 4 mức. Chỉ lên mức khi đúng liên tiếp; sai hai lần thì lùi lại củng cố.
+          Bé 1–3 tuổi dừng ở mức 1, 3–6 tuổi mức 2, tiểu học 3 mức (như Thông tư 27/2020). Chỉ lên mức khi đúng liên tiếp; sai hai lần thì lùi lại củng cố.
         </p>
       </section>
 
@@ -71,13 +71,11 @@ export function CurriculumMap() {
         <table className="matrix">
           <thead>
             <tr>
-              <th>Môn \ Cấp</th>
-              {STAGES.map((st) => (
-                <th key={st.id} className={`s-${st.id}`}>
-                  {st.mascot} {st.name}
-                  <small>
-                    {st.ages[0]}–{st.ages[1]} tuổi · {st.grades}
-                  </small>
+              <th>Môn \ Lớp</th>
+              {VIEWS.map((v) => (
+                <th key={v.id} className={`v-${v.id}`}>
+                  {v.icon} {v.name}
+                  <small>{v.sub}</small>
                 </th>
               ))}
             </tr>
@@ -88,15 +86,16 @@ export function CurriculumMap() {
                 <th>
                   {SUBJECTS[subj].icon} {SUBJECTS[subj].name}
                 </th>
-                {STAGES.map((st) => (
-                  <td key={st.id}>
-                    {SKILLS.filter((s) => s.subject === subj && s.stage === st.id).map((s) => (
-                      <button key={s.id} className={`chip st-${skillState(s, progress)}`} onClick={() => go({ name: 'skill', id: s.id })} title={s.essence}>
-                        {s.lessonId ? '▶ ' : ''}
-                        {s.title}
-                        <small>{s.standards.map((x) => x.code).filter((c) => !c.includes('·')).join(', ')}</small>
-                      </button>
-                    ))}
+                {VIEWS.map((v) => (
+                  <td key={v.id}>
+                    {viewSkills(v.id)
+                      .filter((s) => s.subject === subj)
+                      .map((s) => (
+                        <button key={s.id} className={`chip st-${skillState(s, progress)}`} onClick={() => go({ name: 'skill', id: s.id })} title={s.essence}>
+                          {s.title}
+                          <small>{s.standards.map((x) => x.code).filter((c) => !c.includes('·')).join(', ')}</small>
+                        </button>
+                      ))}
                   </td>
                 ))}
               </tr>
@@ -114,7 +113,7 @@ export function CurriculumMap() {
             </li>
           ))}
         </ul>
-        <p className="muted">▶ = có bài tương tác đầy đủ. Các kỹ năng khác đã có khung chuẩn, bản chất và vị trí trong đồ thị — bài học đang được soạn theo cùng khuôn mẫu.</p>
+        <p className="muted">Chạm vào một bài để xem bản chất, chuẩn tham chiếu và bài nền cần học trước.</p>
       </section>
     </div>
   )

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import { SKILLS, SUBJECTS, type Skill, type SubjectId } from '../core/curriculum'
-import { STAGES, type StageId } from '../core/stages'
+import { SUBJECTS, type Skill, type SubjectId } from '../core/curriculum'
 import { useActiveProfile, useMyProgress, useStore, type SkillProgress } from '../core/store'
-import { dueReviews, recommend, skillState, stageSummary, type SkillState } from '../core/progress'
+import { dueReviews, skillState, type SkillState } from '../core/progress'
+import { defaultView, recommendIn, viewProgress, viewSkills, VIEWS, type ViewId } from '../core/views'
 import { go } from '../core/router'
 import { LESSON_BY_ID } from '../lessons/registry'
-import { Mascot, ProgressRing, useSay, useStage } from '../components/ui'
+import { ProgressRing, useSay, useStage } from '../components/ui'
+import { Teacher } from '../components/Teacher'
+import { GAME_META } from '../games/Games'
+import type { GameKind } from '../lessons/types'
 import { sfx } from '../core/sound'
 
 const STATE_BADGE: Record<SkillState, string> = {
@@ -40,49 +43,76 @@ export function SkillNode({ skill, progress, big, index = 0 }: { skill: Skill; p
         </small>
       </span>
       <span className="node-badge">{STATE_BADGE[state]}</span>
-      {p && <span className="node-ring"><ProgressRing value={p.pKnow} size={38} /></span>}
+      {p && (
+        <span className="node-ring">
+          <ProgressRing value={p.pKnow} size={38} />
+        </span>
+      )}
     </button>
   )
 }
+
+const VIEW_KEY = 'hoc-ban-chat:view'
 
 export function HomeScreen() {
   const me = useActiveProfile()
   const stage = useStage()
   const progress = useMyProgress()
   const stats = useStore((s) => (s.activeId ? s.stats[s.activeId] : undefined))
-  const [view, setView] = useState<StageId>(stage.id)
+  const [view, setViewState] = useState<ViewId>(() => {
+    try {
+      const v = sessionStorage.getItem(VIEW_KEY) as ViewId | null
+      if (v && VIEWS.some((x) => x.id === v)) return v
+    } catch {
+      /* bỏ qua */
+    }
+    return me ? defaultView(me) : 'lop1'
+  })
+  const setView = (v: ViewId) => {
+    setViewState(v)
+    sfx.whoosh()
+    try {
+      sessionStorage.setItem(VIEW_KEY, v)
+    } catch {
+      /* bỏ qua */
+    }
+  }
   const due = dueReviews(progress)
-  const next = recommend(stage.id, progress)
+  const home = me ? defaultView(me) : view
+  const next = recommendIn(view, progress) ?? recommendIn(home, progress)
   const nextLesson = next?.lessonId ? LESSON_BY_ID[next.lessonId] : undefined
   const young = stage.id === 'mam' || stage.id === 'choi'
   const say = useSay()
+
   useEffect(() => {
     if (!me) return
-    const t = setTimeout(
-      () => say(`${young ? `Chào ${me.name}! Mình cùng chơi nhé!` : `Chào ${me.name}!`} ${next ? `Bài tiếp theo của em là: ${next.title}.` : ''} ${due.length ? `Hôm nay có ${due.length} bài cần ôn.` : ''}`),
-      500,
-    )
+    const t = setTimeout(() => {
+      const segs = [young ? 'Chào con! Hôm nay mình cùng học và chơi nhé!' : 'Chào em! Sẵn sàng khám phá điều mới chưa nào?']
+      if (next) segs.push(`Bài tiếp theo: ${next.title}.`)
+      if (due.length) segs.push('Hôm nay có bài cần ôn đó. Ôn một chút thôi là nhớ lâu lắm!')
+      say(segs)
+    }, 600)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!me) return null
-  const skills = SKILLS.filter((s) => s.stage === view)
-  // Bé nhỏ chỉ thấy những bài chơi được ngay — không có gì "đang soạn" gây rối.
-  const tiles = young && view === stage.id
+  const skills = viewSkills(view)
+  const tiles = young && (view === 'mam' || view === 'choi')
   const bySubject = (Object.keys(SUBJECTS) as SubjectId[])
-    .map((id) => ({ id, list: skills.filter((s) => s.subject === id && (!tiles || s.lessonId)) }))
+    .map((id) => ({ id, list: skills.filter((s) => s.subject === id) }))
     .filter((g) => g.list.length)
-
-  const greet = young ? `Chào ${me.name}! Mình cùng chơi nhé!` : `Chào ${me.name}! Sẵn sàng hiểu thêm một điều mới chưa?`
 
   return (
     <div className="home">
       <section className="hero">
-        <Mascot emoji={stage.mascot} mood="happy">
-          {greet}
-          {stats && stats.streakDays > 1 && <div className="muted">🔥 {stats.streakDays} ngày liên tiếp — giỏi lắm!</div>}
-        </Mascot>
+        <div className="hero-teacher">
+          <Teacher size={young ? 130 : 110} mood="happy" />
+          <div className="bubble">
+            {young ? `Chào ${me.name}! Hôm nay mình cùng học và chơi nhé!` : `Chào ${me.name}! Sẵn sàng khám phá điều mới chưa nào?`}
+            {stats && stats.streakDays > 1 && <div className="muted">🔥 {stats.streakDays} ngày liên tiếp — giỏi lắm!</div>}
+          </div>
+        </div>
         {next && nextLesson && (
           <button
             className="next-card"
@@ -93,7 +123,7 @@ export function HomeScreen() {
           >
             <span className="next-emoji">{nextLesson.emoji}</span>
             <span className="next-text">
-              <small>{progress[next.id] ? 'Học tiếp' : 'Bài tiếp theo dành cho em'}</small>
+              <small>{progress[next.id] ? 'Học tiếp' : young ? 'Bài tiếp theo của con' : 'Bài tiếp theo dành cho em'}</small>
               <b>{next.title}</b>
               <i>{next.essence}</i>
             </span>
@@ -112,32 +142,46 @@ export function HomeScreen() {
         )}
       </section>
 
-      <nav className="stage-tabs" aria-label="Các cấp độ">
-        {STAGES.map((s) => {
-          const sum = stageSummary(s.id, progress)
+      <section className="playground">
+        <h3 className="subject-title" style={{ ['--subj' as string]: '#ff5d8f' }}>
+          <span>🎪</span> Sân chơi
+        </h3>
+        <div className="play-grid">
+          {(Object.keys(GAME_META) as GameKind[]).map((k, i) => (
+            <button key={k} className={`play-card pk-${k}`} style={{ ['--i' as string]: i }} onClick={() => go({ name: 'play', kind: k, view })}>
+              <span className="play-emoji">{GAME_META[k].emoji}</span>
+              <b>{GAME_META[k].name}</b>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <nav className="stage-tabs" aria-label="Chọn lớp">
+        {VIEWS.map((v) => {
+          const sum = viewProgress(v.id, progress)
           return (
-            <button key={s.id} className={`stage-tab s-${s.id} ${view === s.id ? 'on' : ''}`} onClick={() => setView(s.id)}>
-              <span>{s.mascot}</span>
-              <b>{s.name}</b>
+            <button key={v.id} className={`stage-tab v-${v.id} ${view === v.id ? 'on' : ''}`} onClick={() => setView(v.id)}>
+              <span>{v.icon}</span>
+              <b>{v.name}</b>
               <small>
-                {sum.mastered}/{sum.playable} vững
+                {sum.mastered}/{sum.total} vững
               </small>
             </button>
           )
         })}
       </nav>
-      {view !== stage.id && (
+      {view !== home && (
         <p className="note">
-          Em đang xem cấp độ <b>{STAGES.find((s) => s.id === view)!.name}</b>. Ôn lại nền móng hoặc thử sức trước đều được — hệ thống sẽ nhắc nếu thiếu kiến thức nền.
+          Em đang xem <b>{VIEWS.find((v) => v.id === view)!.name}</b>. Ôn lại nền móng hay thử sức trước đều được — hệ thống sẽ nhắc nếu thiếu kiến thức nền.
         </p>
       )}
 
       {bySubject.map((g) => (
         <section key={g.id} className="subject-block">
           <h3 className="subject-title" style={{ ['--subj' as string]: SUBJECTS[g.id].color }}>
-            <span>{SUBJECTS[g.id].icon}</span> {SUBJECTS[g.id].name}
+            <span>{SUBJECTS[g.id].icon}</span> {SUBJECTS[g.id].name} <small className="muted">· {g.list.length} bài</small>
           </h3>
-          <div className={`skill-list ${tiles ? 'tiles' : view === 'tieuhoc' ? 'path' : 'grid'}`}>
+          <div className={`skill-list ${tiles ? 'tiles' : 'grid'}`}>
             {g.list.map((s, idx) => (
               <SkillNode key={s.id} skill={s} progress={progress} big={tiles} index={idx} />
             ))}

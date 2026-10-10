@@ -32,6 +32,8 @@ export interface Profile {
   id: string
   name: string
   age: number
+  /** Lớp đang học (1–5) — chỉ với bé tiểu học. */
+  grade?: number
   avatar: string
   createdAt: number
 }

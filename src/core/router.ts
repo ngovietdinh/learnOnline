@@ -9,6 +9,7 @@ export type Route =
   | { name: 'map' }
   | { name: 'skill'; id: string }
   | { name: 'parent' }
+  | { name: 'play'; kind: string; view?: string }
 
 export function parse(hash: string): Route {
   const [path, query = ''] = hash.replace(/^#\/?/, '').split('?')
@@ -29,6 +30,9 @@ export function parse(hash: string): Route {
       return { name: 'parent' }
     case 'nha':
       return { name: 'home' }
+    case 'choi':
+      if (parts[1]) return { name: 'play', kind: parts[1], view: q.get('o') ?? undefined }
+      break
   }
   return { name: 'profiles' }
 }
@@ -49,6 +53,8 @@ export function href(r: Route): string {
       return '#/chuong-trinh'
     case 'parent':
       return '#/phu-huynh'
+    case 'play':
+      return `#/choi/${r.kind}${r.view ? `?o=${r.view}` : ''}`
   }
 }
 

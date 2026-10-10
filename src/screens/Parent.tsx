@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SKILLS, SKILL_BY_ID } from '../core/curriculum'
-import { stageForAge } from '../core/stages'
+import { FOCUS_STAGES, gradeForAge, stageForAge } from '../core/stages'
 import { useStore, type Profile, type SkillProgress } from '../core/store'
 import { dueReviews, recommend } from '../core/progress'
 import { misconceptionLabel } from '../core/misconceptions'
@@ -120,12 +120,12 @@ function LearnerReport({ profile }: { profile: Profile }) {
         <div>
           <h3>{profile.name}</h3>
           <small>
-            {profile.age} tuổi · giai đoạn {stage.name} ({stage.grades})
+            {profile.age} tuổi · {stage.id === 'tieuhoc' ? `Lớp ${profile.grade ?? gradeForAge(profile.age)}` : `${stage.name} (${stage.grades})`}
           </small>
         </div>
         <label className="age-edit">
           Tuổi
-          <input type="number" min={1} max={18} value={profile.age} onChange={(e) => updateProfile(profile.id, { age: Math.max(1, Math.min(18, +e.target.value || 1)) })} />
+          <input type="number" min={1} max={11} value={profile.age} onChange={(e) => updateProfile(profile.id, { age: Math.max(1, Math.min(11, +e.target.value || 1)) })} />
         </label>
       </header>
       <div className="kpis">
@@ -135,7 +135,7 @@ function LearnerReport({ profile }: { profile: Profile }) {
         </div>
         <div>
           <b>
-            {mastered}/{SKILLS.filter((s) => s.lessonId).length}
+            {mastered}/{SKILLS.filter((s) => s.lessonId && FOCUS_STAGES.includes(s.stage)).length}
           </b>
           <small>Bài đã vững</small>
         </div>

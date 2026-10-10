@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type { Question } from '../lessons/types'
 import { LEVELS } from '../core/stages'
 import { sfx } from '../core/sound'
-import { cheer, praise } from '../core/speech'
+import { cheer, praise, type Seg } from '../core/speech'
+import { correctSegs, questionSegs, wrongSegs } from '../core/script'
 import { centerOf, fx } from '../core/fx'
 import { SpeakButton } from './ui'
 
@@ -11,7 +12,7 @@ interface Props {
   /** Trẻ nhỏ: chọn sai được thử lại, không bị "thua". */
   gentle: boolean
   showLevel: boolean
-  say: (t: string) => void
+  say: (t: Seg | Seg[]) => void
   /** Gọi đúng một lần với kết quả của lần chọn đầu tiên. */
   onResult: (correct: boolean, misconception?: string) => void
   onNext: () => void
@@ -26,8 +27,7 @@ export function QuestionView({ q, gentle, showLevel, say, onResult, onNext, rewa
   const done = picked !== null && (q.choices[picked].correct || !gentle)
 
   // Đọc câu hỏi; với câu có chữ (không phải hình), đọc luôn các lựa chọn.
-  const readAloud =
-    (q.speak ?? q.prompt) + (q.choices.some((c) => c.visual) ? '' : ' Chọn một: ' + q.choices.map((c) => c.label).join(', hoặc ') + '.')
+  const readAloud = questionSegs(q)
   useEffect(() => {
     say(readAloud)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,15 +58,13 @@ export function QuestionView({ q, gentle, showLevel, say, onResult, onNext, rewa
       fx.burst(x, y, { count: gentle ? 40 : 28, power: gentle ? 1.3 : 1 })
       if (gentle) fx.hearts(x, y - 20)
       if (firstTry && reward) fx.floatText(x, y - 30, `+${reward} ⭐`)
-      say(`${praise()} ${q.explain}`)
+      say(correctSegs(q, praise()))
       if (gentle) setTimeout(onNext, 2600)
     } else {
       sfx.wrong()
       fx.puff(x, y)
-      if (gentle) {
-        setWrongTries((w) => [...w, i])
-        say(c.why ?? 'Thử lại nhé!')
-      } else say(`${cheer()} ${c.why ?? ''} ${q.explain}`)
+      if (gentle) setWrongTries((w) => [...w, i])
+      say(wrongSegs(q, c, cheer(), gentle))
     }
   }
 

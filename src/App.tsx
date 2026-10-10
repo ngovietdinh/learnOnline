@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRoute, go } from './core/router'
 import { useActiveProfile, useMyProgress, useStore } from './core/store'
 import { stageForAge } from './core/stages'
-import { setSoundEnabled, startMusic, stopMusic, sfx } from './core/sound'
+import { setMusicTrack, setSoundEnabled, startMusic, stopMusic, sfx } from './core/sound'
 import { canSpeak, hasRecordedVoice, hasVietnameseVoice, loadVoiceManifest, onVoicesChanged, setNarrate, setVoiceProfile, setVoiceStyle } from './core/speech'
 import { AmbientBackground, FxLayer } from './components/Effects'
 import { dueReviews } from './core/progress'
@@ -15,6 +15,8 @@ import { ReviewScreen } from './screens/Review'
 import { CurriculumMap } from './screens/CurriculumMap'
 import { SkillDetail } from './screens/SkillDetail'
 import { ParentScreen } from './screens/Parent'
+import { PlayScreen } from './screens/Play'
+import type { GameKind } from './lessons/types'
 
 export default function App() {
   const route = useRoute()
@@ -51,9 +53,10 @@ export default function App() {
   document.documentElement.dataset.stage = theme
   document.documentElement.style.setProperty('--touch', `${stage.touchTarget}px`)
 
-  // Mỗi lần chuyển màn hình: tiếng "vút" nhẹ.
+  // Mỗi lần chuyển màn hình: tiếng "vút" nhẹ và đổi bản nhạc nền cho hợp.
   useEffect(() => {
     sfx.whoosh()
+    setMusicTrack(route.name === 'lesson' || route.name === 'review' ? 'hoc' : route.name === 'play' ? 'choi' : 'nha')
   }, [route.name])
 
   const needsLearner = route.name !== 'profiles' && route.name !== 'parent' && route.name !== 'map'
@@ -87,9 +90,12 @@ export default function App() {
     case 'parent':
       screen = <ParentScreen />
       break
+    case 'play':
+      screen = me ? <PlayScreen kind={route.kind as GameKind} view={route.view} /> : null
+      break
   }
 
-  const immersive = route.name === 'lesson'
+  const immersive = route.name === 'lesson' || route.name === 'play'
   return (
     <div className="app">
       <div className="bg-blobs" aria-hidden>

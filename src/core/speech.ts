@@ -91,6 +91,7 @@ export function toSpeech(text: string): string {
       .replace(/\s*\+\s*/g, ' cộng ')
       .replace(/\s*×\s*/g, ' nhân ')
       .replace(/\s*÷\s*/g, ' chia ')
+      .replace(/(?<=\d)\s+:\s+(?=\d)/g, ' chia ')
       .replace(/\s*≠\s*/g, ' khác ')
       .replace(/\s*≈\s*/g, ' xấp xỉ ')
       .replace(/\s*>\s*/g, ' lớn hơn ')

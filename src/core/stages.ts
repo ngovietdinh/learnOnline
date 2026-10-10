@@ -131,6 +131,13 @@ export function stageForAge(age: number): Stage {
 
 export const STAGE_ORDER: StageId[] = STAGES.map((s) => s.id)
 
+/** Phiên bản này tập trung vào mầm non và tiểu học (1–11 tuổi). */
+export const FOCUS_STAGES: StageId[] = ['mam', 'choi', 'tieuhoc']
+export const MAX_AGE = 11
+
+/** Lớp gợi ý theo tuổi: 6 tuổi vào lớp 1. */
+export const gradeForAge = (age: number) => Math.min(5, Math.max(1, age - 5))
+
 /** Bốn mức độ nhận thức — khớp ma trận đề kiểm tra của Bộ GD&ĐT (tiểu học 3 mức theo TT 27/2020;
  *  THCS–THPT 4 mức) và thang Bloom. */
 export const LEVELS = [

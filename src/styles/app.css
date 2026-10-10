@@ -57,6 +57,27 @@
   }
 }
 
+:root[data-theme='dark'][data-stage='neutral'] {
+    --bg: #0f0d1f;
+    --bg2: #0c1726;
+    --surface: #1a1730;
+    --surface-2: #231f3d;
+    --border: #322c55;
+    --text: #ece9ff;
+    --muted: #a39fc4;
+    --accent: #8b7dff;
+    --good-bg: #0f2e1c;
+    --bad-bg: #3a1414;
+    --warn-bg: #3a2210;
+    --good: #4ade80;
+    --bad: #f87171;
+    --warn: #fb923c;
+    --blob1: #3b2f86;
+    --blob2: #0f4c4a;
+    --blob3: #4a1f3d;
+    color-scheme: dark;
+  }
+
 /* 🐣 Mầm 1–3 tuổi: pastel, siêu to, siêu tròn */
 [data-stage='mam'] {
   --font: 'Baloo 2', system-ui, sans-serif;

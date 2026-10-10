@@ -10,6 +10,8 @@ Nền tảng học trực tuyến cho người học **từ 1 đến 18 tuổi**
 - **Nghe – nhìn sống động, 100% tiếng Việt**: lời đọc tiếng Việt cho mọi lứa tuổi (đọc đúng ký hiệu toán: x² → "x bình phương", 3/8 → "3 phần 8"), lời khen ngẫu nhiên; âm thanh vui nhộn và nhạc nền hộp nhạc tự sáng tác (WebAudio, không cần tệp); pháo hoa, tia sao, băng rôn lên mức, cúp vàng, linh vật phản ứng, nền chuyển động riêng từng lứa tuổi (bong bóng, sao, mây, hình học, vũ trụ).
 - **Báo cáo phụ huynh/giáo viên**: mức hiểu, lịch ôn, *con hay nhầm ở đâu*, lời tự giải thích của con.
 
+**Dùng thử trên web:** https://ngovietdinh.github.io/learnOnline/ (tự cập nhật mỗi khi `main` thay đổi).
+
 Tài liệu thiết kế chi tiết: [docs/THIET-KE.md](docs/THIET-KE.md).
 
 ## Chạy thử

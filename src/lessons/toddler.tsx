@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { ExploreProps, Lesson, Question } from './types'
 import { pick, shuffle } from '../core/rng'
 import { sfx } from '../core/sound'
+import { centerOf, fx } from '../core/fx'
 
 interface TapItem {
   key: string
@@ -24,8 +25,10 @@ function makeTapExplore(items: TapItem[], done: string) {
             className={`tap-card ${seen.has(it.key) ? 'seen' : ''} ${bouncing === it.key ? 'bounce' : ''}`}
             style={{ ['--c' as string]: it.color }}
             aria-label={it.name}
-            onClick={() => {
-              sfx.pop()
+            onClick={(e) => {
+              sfx.boing()
+              const [x, y] = centerOf(e.currentTarget)
+              fx.burst(x, y, { count: 24, colors: [it.color, '#ffffff', '#ffd23f'], shapes: ['star', 'circle', 'heart'] })
               say(it.say)
               setBouncing(it.key)
               setTimeout(() => setBouncing(null), 600)
@@ -34,6 +37,7 @@ function makeTapExplore(items: TapItem[], done: string) {
               if (next.size === items.length && seen.size < items.length) {
                 setTimeout(() => {
                   sfx.celebrate()
+                  fx.confettiRain(90)
                   say(done)
                   onDiscover()
                 }, 1400)

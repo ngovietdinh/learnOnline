@@ -1,10 +1,11 @@
 // Đếm và số lượng đến 10 (3–6 tuổi).
 // Bản chất cần hiểu: (1) mỗi vật đếm đúng MỘT lần, (2) số cuối cùng = số lượng cả nhóm,
 // (3) xếp lại thế nào thì số lượng cũng không đổi (bảo toàn số lượng).
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type MouseEvent } from 'react'
 import type { ExploreProps, Lesson, Question } from './types'
 import { int, pick, shuffle, type Rng } from '../core/rng'
 import { sfx } from '../core/sound'
+import { fx } from '../core/fx'
 import { choicesFrom, near } from './helpers'
 
 const NUM_WORDS = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín', 'mười']
@@ -36,7 +37,9 @@ function CountingExplore({ onDiscover, say }: ExploreProps) {
   const pos = useMemo(() => scatter(n, seed + round * 13), [n, seed, round])
   const complete = order.length === n
 
-  const tap = (i: number) => {
+  const tap = (i: number, e: MouseEvent) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    fx.sparkle(r.left + r.width / 2, r.top + r.height / 2, 14)
     if (order.includes(i)) {
       sfx.wrong()
       say('Bạn này đếm rồi! Mỗi bạn chỉ đếm một lần thôi.')
@@ -63,7 +66,7 @@ function CountingExplore({ onDiscover, say }: ExploreProps) {
               key={i}
               className={`count-item ${k >= 0 ? 'counted' : ''}`}
               style={{ left: `${p.x}%`, top: `${p.y}%`, transition: 'left .7s, top .7s' }}
-              onClick={() => tap(i)}
+              onClick={(e) => tap(i, e)}
               aria-label={k >= 0 ? `đã đếm ${k + 1}` : thing.name}
             >
               <span>{thing.emoji}</span>

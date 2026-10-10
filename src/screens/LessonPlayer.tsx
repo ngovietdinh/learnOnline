@@ -11,6 +11,8 @@ import { recommend } from '../core/progress'
 import { go } from '../core/router'
 import { QuestionView } from '../components/QuestionView'
 import { Confetti, Mascot, SpeakButton, Toast, useSay, useStage } from '../components/ui'
+import { centerOf, fx } from '../core/fx'
+import { praise } from '../core/speech'
 
 type Step = 'hook' | 'explore' | 'essence' | 'practice' | 'teach' | 'remember'
 
@@ -71,6 +73,8 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
   const [q, setQ] = useState<Question>(() => nextQuestion(lesson, rules.startLevel ?? 1))
   const [qKey, setQKey] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
+  const [levelUp, setLevelUp] = useState<number | null>(null)
+  const [mood, setMood] = useState<'idle' | 'happy' | 'oops'>('idle')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => () => stopSpeaking(), [])
@@ -83,9 +87,14 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
   const next = () => goStep(Math.min(stepIdx + 1, steps.length - 1))
 
   useEffect(() => {
+    if (step !== 'practice') sfx.whoosh()
     if (step === 'hook') say(lesson.hook.text)
     if (step === 'explore') say(lesson.explore.intro)
-    if (step === 'essence' && lesson.essence) say(lesson.essence.bigIdea)
+    if (step === 'essence' && lesson.essence) {
+      // Đọc trọn phần bản chất: ý chính, các lý do, hình dung.
+      say([lesson.essence.bigIdea, ...lesson.essence.points, lesson.essence.analogy ? `Hình dung: ${lesson.essence.analogy}` : ''].join('. '))
+      sfx.sparkle()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
@@ -111,10 +120,15 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
     if (!correct && mis) misconceptions.current.push(mis)
     if (correct) addXp(10)
     const n = answerPractice(ps, correct, rules)
+    setMood(correct ? 'happy' : 'oops')
     if (n.level > ps.level) {
-      sfx.levelUp()
-      setToast(`⬆️ Lên mức ${n.level}: ${LEVELS[n.level - 1].name}`)
-      setTimeout(() => setToast(null), 2200)
+      // Chờ tiếng "đúng rồi" xong mới bung băng rôn lên mức.
+      setTimeout(() => {
+        sfx.levelUp()
+        fx.confettiRain(70)
+        setLevelUp(n.level)
+        setTimeout(() => setLevelUp(null), 2600)
+      }, 700)
     } else if (n.level < ps.level) {
       setToast(`↩️ Củng cố lại mức ${n.level} một chút nhé`)
       setTimeout(() => setToast(null), 2200)
@@ -137,7 +151,15 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
   useEffect(() => {
     if (step === 'remember') {
       finish(ps)
-      if (ps.mastered) sfx.celebrate()
+      const congrats = ps.mastered
+        ? `${praise()} Em đã vững bài ${lesson.title}. Ghi nhớ nhé: ${lesson.remember.join('. ')}.`
+        : `Em đã tiến bộ rồi! Ghi nhớ nhé: ${lesson.remember.join('. ')}.`
+      if (ps.mastered) {
+        sfx.celebrate()
+        setTimeout(() => fx.fireworks(7, sfx.firework), 600)
+        setTimeout(() => fx.confettiRain(160), 300)
+      }
+      setTimeout(() => say(congrats), ps.mastered ? 1600 : 300)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
@@ -225,11 +247,16 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
 
         {step === 'practice' && (
           <section className="step-practice">
-            <div className="mastery-bar" aria-label="Tiến độ đến khi vững">
+            <div className="practice-top">
+              <span className={`mini-mascot react-${mood}`} key={`${qKey}-${mood}`} aria-hidden>
+                {stage.mascot}
+              </span>
+              <div className="mastery-bar" aria-label="Tiến độ đến khi vững">
               <div className="mastery-fill" style={{ width: `${Math.round(masteryProgress * 100)}%` }} />
               <span>
                 {ps.done ? (ps.mastered ? 'Đã vững! 🏆' : 'Hẹn ôn lại nhé') : `Tiến tới "vững": ${Math.round(masteryProgress * 100)}%`}
               </span>
+              </div>
             </div>
             {stage.maxLevel > 1 && (
               <div className="level-track">
@@ -269,6 +296,17 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
         {step === 'remember' && (
           <section className="step-remember">
             {ps.mastered && <Confetti />}
+            {ps.mastered && (
+              <div className="trophy" aria-hidden>
+                <span className="trophy-rays" />
+                <span className="trophy-cup">🏆</span>
+                <span className="trophy-stars">
+                  <i>⭐</i>
+                  <i>⭐</i>
+                  <i>⭐</i>
+                </span>
+              </div>
+            )}
             <Mascot emoji={stage.mascot} mood={ps.mastered ? 'happy' : 'think'}>
               {ps.mastered
                 ? mode === 'test'
@@ -313,6 +351,16 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
         )}
       </main>
       {toast && <Toast>{toast}</Toast>}
+      {levelUp && (
+        <div className="levelup" role="status">
+          <div className="levelup-rays" />
+          <div className="levelup-card">
+            <small>Lên mức</small>
+            <b>{levelUp}</b>
+            <span>{LEVELS[levelUp - 1].name}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -334,7 +382,7 @@ function TeachBackStep({
 }) {
   const [picked, setPicked] = useState<number[]>([])
   const solved = picked.some((i) => tb.options[i].correct)
-  useEffect(() => say(tb.prompt), [say, tb.prompt])
+  useEffect(() => say(`${tb.prompt} ${tb.options.map((o, i) => `Bạn thứ ${i + 1} nói: ${o.text}`).join('. ')}`), [say, tb])
   return (
     <section className="step-teach">
       <h3>
@@ -348,11 +396,15 @@ function TeachBackStep({
               key={i}
               className={`teach-option ${was ? (o.correct ? 'right' : 'wrong') : ''}`}
               disabled={solved && !was}
-              onClick={() => {
+              onClick={(e) => {
                 if (was || solved) return
                 setPicked([...picked, i])
-                if (o.correct) sfx.correct()
-                else {
+                const [x, y] = centerOf(e.currentTarget)
+                if (o.correct) {
+                  sfx.correct()
+                  fx.burst(x, y, { count: 36 })
+                } else {
+                  fx.puff(x, y)
                   sfx.wrong()
                   onMistake()
                 }

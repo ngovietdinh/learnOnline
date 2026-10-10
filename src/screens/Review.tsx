@@ -94,6 +94,7 @@ export function ReviewScreen() {
         gentle={stage.gentleErrors}
         showLevel={stage.maxLevel > 1}
         say={say}
+        reward={5}
         onResult={(ok, mis) => {
           const r = (results.current[it.skillId] ??= { ok: true, mis: [] })
           if (!ok) {

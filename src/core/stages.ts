@@ -11,8 +11,12 @@ export interface Stage {
   tagline: string
   /** Người học tự đọc được chưa — nếu chưa, mọi chỉ dẫn đều được đọc thành tiếng. */
   readsAlone: boolean
-  /** Đọc to lời dẫn mặc định. */
+  /** Đọc to lời dẫn mặc định (mọi lứa tuổi đều bật — phụ huynh có thể tắt). */
   narrate: boolean
+  /** Nhạc nền hộp nhạc mặc định. */
+  music: boolean
+  /** Tốc độ và cao độ giọng đọc. */
+  voice: { rate: number; pitch: number }
   /** Cấp độ câu hỏi cao nhất trong luyện tập (1 = Nhận biết … 4 = Vận dụng cao). */
   maxLevel: 1 | 2 | 3 | 4
   /** Có bước "Giải thích lại" (tự giảng lại bằng lời) không. */
@@ -28,6 +32,8 @@ export interface Stage {
 export const STAGES: Stage[] = [
   {
     id: 'mam',
+    music: true,
+    voice: { rate: 0.85, pitch: 1.25 },
     name: 'Mầm',
     ages: [1, 3],
     grades: 'Nhà trẻ',
@@ -43,6 +49,8 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'choi',
+    music: true,
+    voice: { rate: 0.9, pitch: 1.2 },
     name: 'Chồi',
     ages: [3, 6],
     grades: 'Mẫu giáo',
@@ -58,6 +66,8 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'tieuhoc',
+    music: true,
+    voice: { rate: 0.95, pitch: 1.1 },
     name: 'Tiểu học',
     ages: [6, 11],
     grades: 'Lớp 1–5',
@@ -73,13 +83,15 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'thcs',
+    music: false,
+    voice: { rate: 1, pitch: 1 },
     name: 'THCS',
     ages: [11, 15],
     grades: 'Lớp 6–9',
     mascot: '🦉',
     tagline: 'Từ hiện tượng đến quy luật',
     readsAlone: true,
-    narrate: false,
+    narrate: true,
     maxLevel: 4,
     teachBack: true,
     sessionMinutes: 30,
@@ -88,13 +100,15 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'thpt',
+    music: false,
+    voice: { rate: 1.05, pitch: 1 },
     name: 'THPT',
     ages: [15, 18],
     grades: 'Lớp 10–12',
     mascot: '🚀',
     tagline: 'Mô hình hóa thế giới bằng tư duy',
     readsAlone: true,
-    narrate: false,
+    narrate: true,
     maxLevel: 4,
     teachBack: true,
     sessionMinutes: 40,

@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SKILLS, SUBJECTS, type Skill, type SubjectId } from '../core/curriculum'
 import { STAGES, type StageId } from '../core/stages'
 import { useActiveProfile, useMyProgress, useStore, type SkillProgress } from '../core/store'
 import { dueReviews, recommend, skillState, stageSummary, type SkillState } from '../core/progress'
 import { go } from '../core/router'
 import { LESSON_BY_ID } from '../lessons/registry'
-import { Mascot, ProgressRing, useStage } from '../components/ui'
+import { Mascot, ProgressRing, useSay, useStage } from '../components/ui'
 import { sfx } from '../core/sound'
 
 const STATE_BADGE: Record<SkillState, string> = {
@@ -16,7 +16,7 @@ const STATE_BADGE: Record<SkillState, string> = {
   planned: '🛠️ Đang soạn',
 }
 
-export function SkillNode({ skill, progress, big }: { skill: Skill; progress: Record<string, SkillProgress>; big?: boolean }) {
+export function SkillNode({ skill, progress, big, index = 0 }: { skill: Skill; progress: Record<string, SkillProgress>; big?: boolean; index?: number }) {
   const state = skillState(skill, progress)
   const lesson = skill.lessonId ? LESSON_BY_ID[skill.lessonId] : undefined
   const p = progress[skill.id]
@@ -24,7 +24,7 @@ export function SkillNode({ skill, progress, big }: { skill: Skill; progress: Re
   return (
     <button
       className={`skill-node st-${state} ${big ? 'big' : ''}`}
-      style={{ ['--subj' as string]: subj.color }}
+      style={{ ['--subj' as string]: subj.color, ['--i' as string]: index }}
       onClick={() => {
         sfx.tap()
         // Bé nhỏ: chạm là vào học luôn.
@@ -55,6 +55,16 @@ export function HomeScreen() {
   const next = recommend(stage.id, progress)
   const nextLesson = next?.lessonId ? LESSON_BY_ID[next.lessonId] : undefined
   const young = stage.id === 'mam' || stage.id === 'choi'
+  const say = useSay()
+  useEffect(() => {
+    if (!me) return
+    const t = setTimeout(
+      () => say(`${young ? `Chào ${me.name}! Mình cùng chơi nhé!` : `Chào ${me.name}!`} ${next ? `Bài tiếp theo của em là: ${next.title}.` : ''} ${due.length ? `Hôm nay có ${due.length} bài cần ôn.` : ''}`),
+      500,
+    )
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!me) return null
   const skills = SKILLS.filter((s) => s.stage === view)
@@ -128,8 +138,8 @@ export function HomeScreen() {
             <span>{SUBJECTS[g.id].icon}</span> {SUBJECTS[g.id].name}
           </h3>
           <div className={`skill-list ${tiles ? 'tiles' : view === 'tieuhoc' ? 'path' : 'grid'}`}>
-            {g.list.map((s) => (
-              <SkillNode key={s.id} skill={s} progress={progress} big={tiles} />
+            {g.list.map((s, idx) => (
+              <SkillNode key={s.id} skill={s} progress={progress} big={tiles} index={idx} />
             ))}
           </div>
         </section>

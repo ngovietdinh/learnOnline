@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRoute, go } from './core/router'
 import { useActiveProfile, useMyProgress, useStore } from './core/store'
 import { stageForAge } from './core/stages'
-import { setSoundEnabled } from './core/sound'
-import { setNarrate } from './core/speech'
+import { setSoundEnabled, startMusic, stopMusic, sfx } from './core/sound'
+import { canSpeak, hasVietnameseVoice, onVoicesChanged, setNarrate, setVoiceProfile } from './core/speech'
+import { AmbientBackground, FxLayer } from './components/Effects'
 import { dueReviews } from './core/progress'
 import { SKILL_BY_ID } from './core/curriculum'
 import { LESSON_BY_ID } from './lessons/registry'
@@ -23,12 +24,31 @@ export default function App() {
 
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound])
   useEffect(() => setNarrate(settings.narrate ?? stage.narrate), [settings.narrate, stage.narrate])
+  useEffect(() => setVoiceProfile(stage.voice.rate, stage.voice.pitch), [stage])
+
+  // Nhạc nền: trình duyệt chỉ cho phát sau lần chạm đầu tiên.
+  const musicOn = settings.sound && (settings.music ?? stage.music) && !!me
+  useEffect(() => {
+    if (!musicOn) {
+      stopMusic()
+      return
+    }
+    const go = () => startMusic()
+    go()
+    document.addEventListener('pointerdown', go, { once: true })
+    return () => document.removeEventListener('pointerdown', go)
+  }, [musicOn])
 
   // Giao diện "lớn lên" cùng người học: mỗi giai đoạn một chủ đề màu, cỡ chữ, vùng chạm.
+  // Đặt ngay khi vẽ (không chờ effect) để nền chuyển động đọc đúng màu của giai đoạn.
+  const theme = route.name === 'profiles' || route.name === 'parent' || !me ? 'neutral' : stage.id
+  document.documentElement.dataset.stage = theme
+  document.documentElement.style.setProperty('--touch', `${stage.touchTarget}px`)
+
+  // Mỗi lần chuyển màn hình: tiếng "vút" nhẹ.
   useEffect(() => {
-    document.documentElement.dataset.stage = route.name === 'profiles' || route.name === 'parent' || !me ? 'neutral' : stage.id
-    document.documentElement.style.setProperty('--touch', `${stage.touchTarget}px`)
-  }, [stage, me, route.name])
+    sfx.whoosh()
+  }, [route.name])
 
   const needsLearner = route.name !== 'profiles' && route.name !== 'parent' && route.name !== 'map'
   useEffect(() => {
@@ -71,8 +91,13 @@ export default function App() {
         <i />
         <i />
       </div>
+      <AmbientBackground stage={theme} />
       {!immersive && route.name !== 'profiles' && <TopBar />}
-      <div className={`page ${immersive ? 'immersive' : ''}`}>{screen}</div>
+      <VoiceNotice />
+      <div className={`page ${immersive ? 'immersive' : ''}`} key={route.name === 'lesson' ? 'lesson' : route.name}>
+        {screen}
+      </div>
+      <FxLayer />
     </div>
   )
 }
@@ -86,6 +111,7 @@ function TopBar() {
   const due = dueReviews(progress).length
   const stage = stageForAge(me?.age ?? 8)
   const narrating = settings.narrate ?? stage.narrate
+  const music = settings.music ?? stage.music
   return (
     <header className="topbar">
       <button className="tb-brand" onClick={() => go({ name: me ? 'home' : 'profiles' })}>
@@ -109,12 +135,17 @@ function TopBar() {
       </nav>
       <div className="tb-right">
         {me && stats && (
-          <span className="tb-stats" title="Chuỗi ngày học · điểm kinh nghiệm">
-            🔥{stats.streakDays} ⭐{stats.xp}
+          <span className="tb-stats" title="Chuỗi ngày học · điểm sao">
+            <span className="flame">🔥</span>
+            {stats.streakDays} <span className="star-spin">⭐</span>
+            <CountUp value={stats.xp} />
           </span>
         )}
         <button className="icon-btn" onClick={() => setSettings({ narrate: !narrating })} title={narrating ? 'Tắt đọc to' : 'Bật đọc to'}>
           {narrating ? '🗣️' : '🤐'}
+        </button>
+        <button className={`icon-btn ${music && settings.sound ? 'on' : ''}`} onClick={() => setSettings({ music: !music })} title={music ? 'Tắt nhạc nền' : 'Bật nhạc nền'} aria-label={music ? 'Tắt nhạc nền' : 'Bật nhạc nền'}>
+          {music && settings.sound ? '🎵' : '🎶'}
         </button>
         <button className="icon-btn" onClick={() => setSettings({ sound: !settings.sound })} title={settings.sound ? 'Tắt âm thanh' : 'Bật âm thanh'}>
           {settings.sound ? '🔊' : '🔇'}
@@ -127,6 +158,76 @@ function TopBar() {
         )}
       </div>
     </header>
+  )
+}
+
+/** Số đếm tăng dần — điểm sao "chạy" lên khi được cộng. */
+function CountUp({ value }: { value: number }) {
+  const [shown, setShown] = useState(value)
+  useEffect(() => {
+    if (shown === value) return
+    const step = Math.max(1, Math.ceil(Math.abs(value - shown) / 12))
+    const t = setTimeout(() => setShown((s) => (s < value ? Math.min(value, s + step) : Math.max(value, s - step))), 30)
+    return () => clearTimeout(t)
+  }, [shown, value])
+  return <b className={shown !== value ? 'counting' : ''}>{shown}</b>
+}
+
+/** Nhắc cài giọng đọc tiếng Việt nếu máy chưa có. */
+function VoiceNotice() {
+  const [missing, setMissing] = useState(false)
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem('an-nhac-giong') === '1'
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    if (!canSpeak()) return
+    // Danh sách giọng nạp chậm trên một số trình duyệt — chờ một chút rồi mới kết luận.
+    const t = setTimeout(() => setMissing(!hasVietnameseVoice()), 2500)
+    const off = onVoicesChanged(() => setMissing(!hasVietnameseVoice()))
+    return () => {
+      clearTimeout(t)
+      off()
+    }
+  }, [])
+  if (!missing || hidden) return null
+  return (
+    <div className="voice-notice" role="status">
+      <span>🗣️</span>
+      <details>
+        <summary>
+          Máy này chưa có <b>giọng đọc tiếng Việt</b> — bấm để xem cách bật
+        </summary>
+        <ul>
+          <li>
+            <b>Android:</b> cài "Dịch vụ chuyển văn bản thành giọng nói của Google", chọn ngôn ngữ Tiếng Việt.
+          </li>
+          <li>
+            <b>Windows:</b> Cài đặt › Thời gian và ngôn ngữ › Giọng nói › Thêm giọng › Tiếng Việt.
+          </li>
+          <li>
+            <b>iPhone, iPad, Mac:</b> Cài đặt › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Việt.
+          </li>
+          <li>Dùng Chrome hoặc Edge để có giọng đọc tự nhiên nhất.</li>
+        </ul>
+      </details>
+      <button
+        className="btn btn-ghost"
+        onClick={() => {
+          setHidden(true)
+          try {
+            localStorage.setItem('an-nhac-giong', '1')
+          } catch {
+            /* bỏ qua */
+          }
+        }}
+      >
+        Đã hiểu
+      </button>
+    </div>
   )
 }
 

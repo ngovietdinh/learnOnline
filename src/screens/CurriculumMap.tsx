@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FRAMEWORKS, SKILLS, SUBJECTS, type Framework, type SubjectId } from '../core/curriculum'
+import { FRAMEWORKS, FRAMEWORK_SHORT, SKILLS, SUBJECTS, type Framework, type SubjectId } from '../core/curriculum'
 import { LEVELS, STAGES } from '../core/stages'
 import { useMyProgress } from '../core/store'
 import { skillState } from '../core/progress'
@@ -110,7 +110,7 @@ export function CurriculumMap() {
         <ul className="std-list">
           {(Object.keys(FRAMEWORKS) as Framework[]).map((f) => (
             <li key={f}>
-              <span className={`fw fw-${f}`}>{f}</span> {FRAMEWORKS[f]}
+              <span className={`fw fw-${f}`}>{FRAMEWORK_SHORT[f]}</span> {FRAMEWORKS[f]}
             </li>
           ))}
         </ul>

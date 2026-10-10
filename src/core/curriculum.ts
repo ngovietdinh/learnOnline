@@ -23,6 +23,15 @@ export const FRAMEWORKS: Record<Framework, string> = {
   CEFR: 'Khung tham chiếu ngôn ngữ chung châu Âu (CEFR) — Tiếng Anh',
 }
 
+/** Tên ngắn tiếng Việt hiển thị trên nhãn chuẩn. */
+export const FRAMEWORK_SHORT: Record<Framework, string> = {
+  GDMN: 'Mầm non',
+  GDPT2018: 'GDPT 2018',
+  CCSS: 'Chuẩn Toán Mỹ',
+  NGSS: 'Chuẩn Khoa học Mỹ',
+  CEFR: 'Khung châu Âu',
+}
+
 export interface StandardRef {
   framework: Framework
   code: string
@@ -97,8 +106,8 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'choi.en-sounds', subject: 'tienganh', stage: 'choi', grade: '4–6 tuổi',
-    title: 'First English sounds', essence: 'Nghe trước, nói sau — âm thanh đi trước chữ viết.',
-    standards: [ce('Pre-A1 · Nghe hiểu từ quen thuộc')], prereqs: [],
+    title: 'Làm quen âm tiếng Anh', essence: 'Nghe trước, nói sau — âm thanh đi trước chữ viết.',
+    standards: [ce('Tiền A1 · Nghe hiểu từ quen thuộc')], prereqs: [],
   },
 
   // ───────── Tiểu học ─────────
@@ -169,7 +178,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'th.en-present', subject: 'tienganh', stage: 'tieuhoc', grade: 'Lớp 3–5',
-    title: 'Present simple', essence: 'Thì hiện tại đơn nói về thói quen và sự thật luôn đúng.',
+    title: 'Thì hiện tại đơn', essence: 'Thì hiện tại đơn nói về thói quen và sự thật luôn đúng.',
     standards: [g('Tiếng Anh 3–5'), ce('A1')], prereqs: ['choi.en-sounds'],
   },
 
@@ -250,7 +259,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'thcs.en-past', subject: 'tienganh', stage: 'thcs', grade: 'Lớp 6–9',
-    title: 'Past simple vs present perfect', essence: 'Quá khứ đơn: đã xong, có mốc. Hiện tại hoàn thành: còn liên quan đến bây giờ.',
+    title: 'Quá khứ đơn và hiện tại hoàn thành', essence: 'Quá khứ đơn: đã xong, có mốc. Hiện tại hoàn thành: còn liên quan đến bây giờ.',
     standards: [g('Tiếng Anh 6–9'), ce('A2')], prereqs: ['th.en-present'],
   },
 
@@ -316,7 +325,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'thpt.en-conditionals', subject: 'tienganh', stage: 'thpt', grade: 'Lớp 10–12',
-    title: 'Conditional sentences', essence: 'Lùi thì để lùi xa thực tế: càng "lùi", điều kiện càng khó xảy ra.',
+    title: 'Câu điều kiện', essence: 'Lùi thì để lùi xa thực tế: càng "lùi", điều kiện càng khó xảy ra.',
     standards: [g('Tiếng Anh 10–12'), ce('B1')], prereqs: ['thcs.en-past'],
   },
 ]

@@ -1,4 +1,4 @@
-import { FRAMEWORKS, SKILLS, SKILL_BY_ID, SUBJECTS } from '../core/curriculum'
+import { FRAMEWORKS, FRAMEWORK_SHORT, SKILLS, SKILL_BY_ID, SUBJECTS } from '../core/curriculum'
 import { STAGE_BY_ID } from '../core/stages'
 import { useMyProgress } from '../core/store'
 import { missingPrereqs, skillState } from '../core/progress'
@@ -74,7 +74,7 @@ export function SkillDetail({ id }: { id: string }) {
         <ul className="std-list">
           {skill.standards.map((s, i) => (
             <li key={i}>
-              <span className={`fw fw-${s.framework}`}>{s.framework}</span> {s.code}
+              <span className={`fw fw-${s.framework}`}>{FRAMEWORK_SHORT[s.framework]}</span> {s.code}
               <small className="muted"> — {FRAMEWORKS[s.framework]}</small>
             </li>
           ))}

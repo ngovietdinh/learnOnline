@@ -73,6 +73,17 @@ export function ParentScreen() {
             <option value="off">Luôn tắt</option>
           </select>
         </label>
+        <label className="toggle">
+          Nhạc nền vui nhộn:
+          <select
+            value={settings.music == null ? 'auto' : settings.music ? 'on' : 'off'}
+            onChange={(e) => setSettings({ music: e.target.value === 'auto' ? null : e.target.value === 'on' })}
+          >
+            <option value="auto">Tự động theo tuổi (bật cho bé đến hết tiểu học)</option>
+            <option value="on">Luôn bật</option>
+            <option value="off">Luôn tắt</option>
+          </select>
+        </label>
         <p className="muted">
           Dữ liệu học tập chỉ lưu trên thiết bị này (localStorage), không gửi đi đâu. Khuyến nghị thời lượng: 1–3 tuổi ≤ 5 phút/lần và luôn có người lớn
           ngồi cùng; 3–6 tuổi ≤ 10 phút; tiểu học ≤ 20 phút; THCS–THPT 30–40 phút rồi nghỉ.
@@ -138,7 +149,7 @@ function LearnerReport({ profile }: { profile: Profile }) {
         </div>
         <div>
           <b>⭐ {stats?.xp ?? 0}</b>
-          <small>Điểm XP</small>
+          <small>Điểm sao</small>
         </div>
       </div>
 

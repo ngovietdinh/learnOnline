@@ -55,6 +55,8 @@ export interface Settings {
   sound: boolean
   /** null = theo mặc định của lứa tuổi. */
   narrate: boolean | null
+  /** null = theo mặc định của lứa tuổi. */
+  music?: boolean | null
 }
 
 export interface LearnerStats {
@@ -114,7 +116,7 @@ export const useStore = create<State>()(
       activeId: null,
       progress: {},
       stats: {},
-      settings: { sound: true, narrate: null },
+      settings: { sound: true, narrate: null, music: null },
 
       addProfile: (p) => {
         const id = Math.random().toString(36).slice(2, 10)

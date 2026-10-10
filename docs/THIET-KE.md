@@ -32,6 +32,11 @@
 | Phiên học khuyến nghị | ≤ 5 phút, có người lớn | ≤ 10 phút | ≤ 20 phút | 30 phút | 40 phút |
 | Trang chính | Ô hình to, chạm là chơi | Ô hình to | Đường phiêu lưu | Lưới kỹ năng | Lưới kỹ năng |
 
+**Nghe – nhìn:**
+- *Lời đọc tiếng Việt* bật cho mọi lứa tuổi (phụ huynh tắt được). Hệ thống tự chọn giọng Việt tốt nhất trên máy, đọc chậm và cao giọng hơn cho bé nhỏ, đọc đúng ký hiệu toán – lý (`src/core/speech.ts`, có kiểm thử). Máy chưa có giọng Việt sẽ được hướng dẫn cài.
+- *Âm thanh* tổng hợp bằng WebAudio: nhiều kiểu chuông "đúng rồi", tiếng sai hoạt hình nhẹ nhàng, "boing", "vút", lấp lánh, kèn chiến thắng, pháo hoa; nhạc nền hộp nhạc ngũ cung tự sinh, tự hạ nhỏ khi đang đọc lời (`src/core/sound.ts`).
+- *Hiệu ứng động*: lớp hạt trên canvas (tia sao, tim, pháo giấy, pháo hoa, chữ "+10 ⭐" bay lên — `src/core/fx.ts`), băng rôn lên mức, cúp vàng, linh vật nhảy khi đúng/lắc đầu khi sai, nền chuyển động theo tuổi (`src/components/Effects.tsx`).
+
 Cài đặt ở `src/core/stages.ts`; chủ đề màu ở `src/styles/app.css` (token đổi theo `data-stage` trên `<html>`). Tôn trọng `prefers-reduced-motion`.
 
 ---

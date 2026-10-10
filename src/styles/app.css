@@ -2545,3 +2545,358 @@ input[type='range'] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ════════════════════════ Hiệu ứng động ════════════════════════ */
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 80;
+}
+.ambient {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Tiêu đề thương hiệu: dải màu chảy */
+.brand h1,
+.tb-brand span {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), #ff5d8f, var(--accent));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: flow 6s linear infinite;
+}
+@keyframes flow {
+  to {
+    background-position: 300% 0;
+  }
+}
+
+/* Nút: vệt sáng lướt qua + nảy khi rê chuột */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: shine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.03);
+}
+.choice:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 0 var(--accent), 0 14px 26px -12px var(--accent);
+}
+.choice.right {
+  animation: win 0.6s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+@keyframes win {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12) rotate(-2deg);
+  }
+  70% {
+    transform: scale(0.97) rotate(1deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.icon-btn.on {
+  border-color: var(--accent);
+  animation: bob 1.6s ease-in-out infinite;
+}
+
+/* Thẻ kỹ năng lần lượt bay vào */
+.skill-node {
+  animation: pop-in-up 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.skill-node.st-available {
+  animation: pop-in-up 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both, glow 2.4s ease-in-out 0.6s infinite;
+  animation-delay: calc(var(--i, 0) * 60ms), calc(var(--i, 0) * 60ms + 600ms);
+}
+.skill-node:hover .node-icon {
+  animation: wiggle 0.5s;
+}
+@keyframes pop-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.92);
+  }
+}
+@keyframes wiggle {
+  25% {
+    transform: rotate(-12deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(10deg) scale(1.1);
+  }
+}
+
+/* Thanh trên: lửa chuỗi ngày & sao */
+.tb-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.flame {
+  display: inline-block;
+  animation: flicker 1.2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes flicker {
+  50% {
+    transform: scale(1.15, 0.92) rotate(-4deg);
+  }
+}
+.star-spin {
+  display: inline-block;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+@keyframes twinkle {
+  50% {
+    transform: rotate(20deg) scale(1.2);
+  }
+}
+.counting {
+  color: #f59e0b;
+  transform: scale(1.25);
+  display: inline-block;
+  transition: transform 0.1s;
+}
+
+/* Linh vật nhỏ phản ứng theo câu trả lời */
+.practice-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.practice-top .mastery-bar {
+  flex: 1;
+  margin: 0;
+}
+.mini-mascot {
+  font-size: 2.4rem;
+  line-height: 1;
+  display: inline-block;
+}
+.react-idle {
+  animation: bob 2.6s ease-in-out infinite;
+}
+.react-happy {
+  animation: jump 0.8s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.react-oops {
+  animation: oops 0.7s;
+}
+@keyframes jump {
+  30% {
+    transform: translateY(-22px) rotate(-12deg) scale(1.15);
+  }
+  60% {
+    transform: translateY(0) rotate(8deg);
+  }
+}
+@keyframes oops {
+  25% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(10deg) scale(0.92);
+  }
+  75% {
+    transform: rotate(-6deg);
+  }
+}
+
+/* Băng rôn lên mức */
+.levelup {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 25%, transparent), transparent 60%);
+  animation: fade-out 2.6s ease-in forwards;
+}
+.levelup-rays,
+.trophy-rays {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  max-width: 120vw;
+  max-height: 120vw;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, #ffd23f 55%, transparent) 0 10deg, transparent 10deg 22deg);
+  mask: radial-gradient(circle, #000 20%, transparent 70%);
+  -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%);
+  animation: spin 9s linear infinite;
+}
+.levelup-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding: 22px 40px;
+  border-radius: 28px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #ff5d8f);
+  box-shadow: 0 20px 50px -10px var(--accent);
+  animation: zoom-bounce 0.7s cubic-bezier(0.2, 1.8, 0.4, 1);
+  font-family: var(--font-display);
+}
+.levelup-card small {
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.levelup-card b {
+  font-size: 4.5rem;
+  line-height: 1;
+  text-shadow: 0 4px 0 rgb(0 0 0 / 0.15);
+}
+.levelup-card span {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+@keyframes zoom-bounce {
+  from {
+    transform: scale(0.2) rotate(-12deg);
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  0%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Cúp vàng khi hoàn thành bài */
+.trophy {
+  position: relative;
+  height: 190px;
+  display: grid;
+  place-items: center;
+}
+.trophy-rays {
+  width: 320px;
+  height: 320px;
+}
+.trophy-cup {
+  position: relative;
+  font-size: 7rem;
+  line-height: 1;
+  filter: drop-shadow(0 10px 18px rgb(245 158 11 / 0.55));
+  animation: trophy-in 1s cubic-bezier(0.2, 1.6, 0.4, 1) both, float 3s ease-in-out 1s infinite;
+}
+.trophy-stars {
+  position: absolute;
+  bottom: 4px;
+  display: flex;
+  gap: 10px;
+  font-size: 2rem;
+}
+.trophy-stars i {
+  font-style: normal;
+  animation: star-pop 0.5s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+.trophy-stars i:nth-child(1) {
+  animation-delay: 0.7s;
+}
+.trophy-stars i:nth-child(2) {
+  animation-delay: 0.95s;
+  transform: translateY(-10px);
+}
+.trophy-stars i:nth-child(3) {
+  animation-delay: 1.2s;
+}
+@keyframes trophy-in {
+  from {
+    transform: translateY(80px) scale(0.2) rotate(-30deg);
+    opacity: 0;
+  }
+}
+@keyframes float {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes star-pop {
+  from {
+    transform: scale(0) rotate(-90deg);
+    opacity: 0;
+  }
+}
+
+/* Nhắc cài giọng đọc */
+.voice-notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 1100px;
+  margin: 12px auto 0;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: var(--warn-bg);
+  border: 2px solid var(--warn);
+  font-size: 0.9em;
+}
+.voice-notice > span {
+  font-size: 1.6rem;
+}
+.voice-notice details {
+  flex: 1;
+  min-width: 0;
+}
+.voice-notice summary {
+  cursor: pointer;
+  padding-top: 4px;
+}
+.voice-notice ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+}
+@media (max-width: 1132px) {
+  .voice-notice {
+    margin-inline: 16px;
+  }
+}
+
+/* Thẻ ghi nhớ nảy lên lần lượt */
+.memory-card:hover {
+  transform: translateY(-4px) rotate(-1deg);
+}
+.stepper li.now .step-icon {
+  display: inline-block;
+  animation: bob 1.4s ease-in-out infinite;
+}

@@ -1,0 +1,383 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { Lesson, Question } from '../lessons/types'
+import type { Skill } from '../core/curriculum'
+import { LEVELS, type Level } from '../core/stages'
+import { answerPractice, practiceRules, startPractice, type PracticeRules, type PracticeState } from '../core/mastery'
+import { randomRng } from '../core/rng'
+import { sfx } from '../core/sound'
+import { stopSpeaking } from '../core/speech'
+import { useMyProgress, useStore } from '../core/store'
+import { recommend } from '../core/progress'
+import { go } from '../core/router'
+import { QuestionView } from '../components/QuestionView'
+import { Confetti, Mascot, SpeakButton, Toast, useSay, useStage } from '../components/ui'
+
+type Step = 'hook' | 'explore' | 'essence' | 'practice' | 'teach' | 'remember'
+
+const STEP_META: Record<Step, { icon: string; name: string }> = {
+  hook: { icon: '❓', name: 'Tò mò' },
+  explore: { icon: '🔍', name: 'Khám phá' },
+  essence: { icon: '💎', name: 'Bản chất' },
+  practice: { icon: '🎯', name: 'Luyện tập' },
+  teach: { icon: '🗣️', name: 'Giảng lại' },
+  remember: { icon: '🧠', name: 'Ghi nhớ' },
+}
+
+function nextQuestion(lesson: Lesson, level: Level, prev?: Question): Question {
+  // Tránh lặp lại y hệt câu vừa hỏi.
+  for (let i = 0; i < 8; i++) {
+    const q = lesson.practice(level, randomRng)
+    if (!prev || q.prompt !== prev.prompt) return q
+  }
+  return lesson.practice(level, randomRng)
+}
+
+export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: Skill; mode: 'learn' | 'test' }) {
+  const stage = useStage()
+  const say = useSay()
+  const recordLesson = useStore((s) => s.recordLesson)
+  const addXp = useStore((s) => s.addXp)
+  const progress = useMyProgress()
+
+  const steps = useMemo<Step[]>(() => {
+    if (mode === 'test') return ['practice', 'remember']
+    const s: Step[] = ['hook', 'explore']
+    if (lesson.essence) s.push('essence')
+    s.push('practice')
+    if (lesson.teachBack && stage.teachBack) s.push('teach')
+    s.push('remember')
+    return s
+  }, [lesson, stage, mode])
+
+  const [stepIdx, setStepIdx] = useState(0)
+  const step = steps[stepIdx]
+  const startedAt = useRef(Date.now())
+  const misconceptions = useRef<string[]>([])
+  const [explanation, setExplanation] = useState('')
+
+  const rules: PracticeRules = useMemo(() => {
+    const base = practiceRules(stage.maxLevel, stage.gentleErrors)
+    if (mode === 'test') return { ...base, startLevel: stage.maxLevel, toLevelUp: 3, maxQuestions: 4 }
+    return base
+  }, [stage, mode])
+
+  const [ps, setPsState] = useState<PracticeState>(() => startPractice(rules))
+  // Bản sao đồng bộ: onNext có thể được gọi từ hẹn giờ trước khi React kịp vẽ lại.
+  const psRef = useRef(ps)
+  const setPs = (n: PracticeState) => {
+    psRef.current = n
+    setPsState(n)
+  }
+  const [q, setQ] = useState<Question>(() => nextQuestion(lesson, rules.startLevel ?? 1))
+  const [qKey, setQKey] = useState(0)
+  const [toast, setToast] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => () => stopSpeaking(), [])
+
+  const goStep = (i: number) => {
+    stopSpeaking()
+    setStepIdx(i)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const next = () => goStep(Math.min(stepIdx + 1, steps.length - 1))
+
+  useEffect(() => {
+    if (step === 'hook') say(lesson.hook.text)
+    if (step === 'explore') say(lesson.explore.intro)
+    if (step === 'essence' && lesson.essence) say(lesson.essence.bigIdea)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
+  const finish = useCallback(
+    (final: PracticeState) => {
+      if (saved) return
+      setSaved(true)
+      recordLesson(skill.id, {
+        mastered: final.mastered,
+        pKnow: final.pKnow,
+        seconds: Math.round((Date.now() - startedAt.current) / 1000),
+        misconceptions: misconceptions.current,
+        explanation,
+      })
+      if (final.mastered) addXp(50)
+    },
+    [saved, recordLesson, skill.id, explanation, addXp],
+  )
+
+  const onResult = (correct: boolean, mis?: string) => {
+    const ps = psRef.current
+    if (ps.done) return
+    if (!correct && mis) misconceptions.current.push(mis)
+    if (correct) addXp(10)
+    const n = answerPractice(ps, correct, rules)
+    if (n.level > ps.level) {
+      sfx.levelUp()
+      setToast(`⬆️ Lên mức ${n.level}: ${LEVELS[n.level - 1].name}`)
+      setTimeout(() => setToast(null), 2200)
+    } else if (n.level < ps.level) {
+      setToast(`↩️ Củng cố lại mức ${n.level} một chút nhé`)
+      setTimeout(() => setToast(null), 2200)
+    }
+    setPs(n)
+  }
+
+  const onNextQuestion = () => {
+    const ps = psRef.current
+    if (ps.done) {
+      // Bài có bước giảng lại: lưu kết quả ở bước cuối để kèm lời tự giải thích.
+      if (!steps.includes('teach')) finish(ps)
+      next()
+      return
+    }
+    setQ(nextQuestion(lesson, ps.level, q))
+    setQKey((k) => k + 1)
+  }
+
+  useEffect(() => {
+    if (step === 'remember') {
+      finish(ps)
+      if (ps.mastered) sfx.celebrate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
+  const perLevel = rules.toLevelUp
+  const masteryProgress = ps.mastered
+    ? 1
+    : ((ps.level - (rules.startLevel ?? 1)) * perLevel + ps.streak) / ((rules.maxLevel - (rules.startLevel ?? 1) + 1) * perLevel)
+
+  const Explore = lesson.explore.Component
+  // Ở bước cuối, kết quả đã được lưu nên gợi ý dựa trên tiến độ mới nhất.
+  const recommendNext = step === 'remember' ? recommend(stage.id, progress) : undefined
+
+  return (
+    <div className="player">
+      <header className="player-head">
+        <button className="btn btn-ghost" onClick={() => go({ name: 'home' })} aria-label="Thoát bài học">
+          ✕
+        </button>
+        <div className="player-title">
+          <span className="player-emoji">{lesson.emoji}</span>
+          <div>
+            <h2>{lesson.title}</h2>
+            <small>
+              {skill.grade} · {mode === 'test' ? 'Kiểm tra nhanh — đã biết thì bỏ qua' : 'Học hiểu bản chất'}
+            </small>
+          </div>
+        </div>
+      </header>
+      <ol className="stepper" aria-label="Các bước bài học">
+        {steps.map((s, i) => (
+          <li key={s} className={i === stepIdx ? 'now' : i < stepIdx ? 'past' : ''}>
+            <span className="step-icon">{STEP_META[s].icon}</span>
+            <span className="step-name">{STEP_META[s].name}</span>
+          </li>
+        ))}
+      </ol>
+
+      <main className="stage-card" key={step}>
+        {step === 'hook' && (
+          <section className="step-hook">
+            <div className="hook-visual">{lesson.hook.visual}</div>
+            <Mascot emoji={stage.mascot} mood="think">
+              {lesson.hook.text} <SpeakButton text={lesson.hook.text} />
+            </Mascot>
+            <button className="btn btn-primary btn-big" onClick={next}>
+              {stage.readsAlone ? 'Cùng tìm hiểu nào ➜' : '▶️ Chơi nào!'}
+            </button>
+          </section>
+        )}
+
+        {step === 'explore' && (
+          <section className="step-explore">
+            <p className="step-intro">
+              {lesson.explore.intro} <SpeakButton text={lesson.explore.intro} />
+            </p>
+            <Explore onDiscover={next} say={say} />
+          </section>
+        )}
+
+        {step === 'essence' && lesson.essence && (
+          <section className="step-essence">
+            <div className="big-idea">
+              <span className="gem">💎</span>
+              <p>{lesson.essence.bigIdea}</p>
+              <SpeakButton text={lesson.essence.bigIdea} />
+            </div>
+            <ul className="why-list">
+              {lesson.essence.points.map((p, i) => (
+                <li key={i} style={{ animationDelay: `${i * 0.15}s` }}>
+                  {p}
+                </li>
+              ))}
+            </ul>
+            {lesson.essence.analogy && (
+              <p className="analogy">
+                <b>🪄 Hình dung:</b> {lesson.essence.analogy}
+              </p>
+            )}
+            <button className="btn btn-primary btn-big" onClick={next}>
+              Luyện tập để chắc chắn ➜
+            </button>
+          </section>
+        )}
+
+        {step === 'practice' && (
+          <section className="step-practice">
+            <div className="mastery-bar" aria-label="Tiến độ đến khi vững">
+              <div className="mastery-fill" style={{ width: `${Math.round(masteryProgress * 100)}%` }} />
+              <span>
+                {ps.done ? (ps.mastered ? 'Đã vững! 🏆' : 'Hẹn ôn lại nhé') : `Tiến tới "vững": ${Math.round(masteryProgress * 100)}%`}
+              </span>
+            </div>
+            {stage.maxLevel > 1 && (
+              <div className="level-track">
+                {LEVELS.slice(rules.startLevel ? rules.startLevel - 1 : 0, rules.maxLevel).map((l) => (
+                  <span key={l.level} className={`lt ${ps.level === l.level ? 'now' : ps.level > l.level || ps.mastered ? 'past' : ''}`}>
+                    {l.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            <QuestionView
+              key={qKey}
+              q={q}
+              gentle={stage.gentleErrors}
+              showLevel={stage.maxLevel > 1}
+              say={say}
+              onResult={onResult}
+              onNext={onNextQuestion}
+            />
+            {ps.done && !ps.mastered && mode === 'test' && (
+              <p className="note">Chưa sao! Mình học kỹ bài này từ đầu để hiểu tận gốc nhé.</p>
+            )}
+          </section>
+        )}
+
+        {step === 'teach' && lesson.teachBack && (
+          <TeachBackStep
+            tb={lesson.teachBack}
+            say={say}
+            onMistake={() => misconceptions.current.push('giang-lai-chua-dung')}
+            explanation={explanation}
+            setExplanation={setExplanation}
+            onDone={next}
+          />
+        )}
+
+        {step === 'remember' && (
+          <section className="step-remember">
+            {ps.mastered && <Confetti />}
+            <Mascot emoji={stage.mascot} mood={ps.mastered ? 'happy' : 'think'}>
+              {ps.mastered
+                ? mode === 'test'
+                  ? 'Em đã biết vững bài này rồi! Mình sẽ hẹn ôn lại để nhớ thật lâu.'
+                  : 'Tuyệt vời! Em đã hiểu và vững bài này. Hẹn em ôn lại vào ngày mai để nhớ lâu nhé!'
+                : 'Em đã tiến bộ rồi! Ngày mai mình luyện thêm một chút để thật vững nhé.'}
+            </Mascot>
+            <div className="memory-cards">
+              {lesson.remember.map((r, i) => (
+                <div key={i} className="memory-card" style={{ animationDelay: `${i * 0.12}s` }}>
+                  {r}
+                </div>
+              ))}
+            </div>
+            <div className="result-row">
+              <div>
+                <b>{ps.correct}</b>/{ps.answered} câu đúng
+              </div>
+              <div>
+                Mức hiểu ước tính <b>{Math.round(ps.pKnow * 100)}%</b>
+              </div>
+              <div>
+                Ôn lại: <b>ngày mai</b> → 3 ngày → 1 tuần → …
+              </div>
+            </div>
+            <div className="btn-row center">
+              {mode === 'test' && !ps.mastered && (
+                <button className="btn btn-primary" onClick={() => go({ name: 'lesson', id: lesson.id, mode: 'learn' })}>
+                  📘 Học bài này từ đầu
+                </button>
+              )}
+              {recommendNext && recommendNext.id !== skill.id && recommendNext.lessonId && (
+                <button className="btn btn-primary" onClick={() => go({ name: 'lesson', id: recommendNext.lessonId!, mode: 'learn' })}>
+                  Bài tiếp: {recommendNext.title} ➜
+                </button>
+              )}
+              <button className="btn" onClick={() => go({ name: 'home' })}>
+                🏠 Về trang chính
+              </button>
+            </div>
+          </section>
+        )}
+      </main>
+      {toast && <Toast>{toast}</Toast>}
+    </div>
+  )
+}
+
+function TeachBackStep({
+  tb,
+  say,
+  onMistake,
+  explanation,
+  setExplanation,
+  onDone,
+}: {
+  tb: NonNullable<Lesson['teachBack']>
+  say: (t: string) => void
+  onMistake: () => void
+  explanation: string
+  setExplanation: (s: string) => void
+  onDone: () => void
+}) {
+  const [picked, setPicked] = useState<number[]>([])
+  const solved = picked.some((i) => tb.options[i].correct)
+  useEffect(() => say(tb.prompt), [say, tb.prompt])
+  return (
+    <section className="step-teach">
+      <h3>
+        {tb.prompt} <SpeakButton text={tb.prompt} />
+      </h3>
+      <div className="teach-options">
+        {tb.options.map((o, i) => {
+          const was = picked.includes(i)
+          return (
+            <button
+              key={i}
+              className={`teach-option ${was ? (o.correct ? 'right' : 'wrong') : ''}`}
+              disabled={solved && !was}
+              onClick={() => {
+                if (was || solved) return
+                setPicked([...picked, i])
+                if (o.correct) sfx.correct()
+                else {
+                  sfx.wrong()
+                  onMistake()
+                }
+                say(o.feedback)
+              }}
+            >
+              <span className="who">{o.who}</span>
+              <span className="says">“{o.text}”</span>
+              {was && <span className="teach-fb">{o.feedback}</span>}
+            </button>
+          )
+        })}
+      </div>
+      {solved && (
+        <div className="own-words">
+          <label htmlFor="own">
+            ✍️ Giờ em thử giải thích lại <b>bằng lời của mình</b> (như đang giảng cho một bạn nhỏ hơn):
+          </label>
+          <textarea id="own" rows={3} placeholder={tb.ownWordsHint} value={explanation} onChange={(e) => setExplanation(e.target.value)} />
+          <small className="muted">Tự giảng lại là cách nhớ lâu nhất. Bố mẹ/thầy cô sẽ xem được lời giải thích này.</small>
+          <button className="btn btn-primary btn-big" onClick={onDone}>
+            {explanation.trim() ? 'Hoàn thành ➜' : 'Bỏ qua và hoàn thành ➜'}
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}

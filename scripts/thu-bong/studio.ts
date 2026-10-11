@@ -443,7 +443,7 @@ const KINDS: Record<string, () => void> = {
       nose: 'tron',
       muzzle: '#ffffff',
       extra: (h) => {
-        for (const k of [-1, 1]) stick(h, [k * 0.36, 0.02, 0.93], [0.25, 0.3, 0.06], '#33333c', 'fur', -0.01, 0.03).obj.rotateZ(k * 0.5)
+        for (const k of [-1, 1]) stick(h, [k * 0.34, 0.0, 0.93], [0.22, 0.27, 0.08], '#33333c', 'fur', 0.01, 0.07).obj.rotateZ(k * 0.5)
       },
     }),
   koala: () => mammal({ fur: '#aeb8c6', light: '#eef1f5', inner: '#f4f6fa', ear: 'chuot', nose: 'none', extra: (h) => stick(h, [0, -0.1, 1], [0.17, 0.22, 0.12], '#3a3540', 'gloss', 0.03) }),
@@ -615,13 +615,14 @@ const KINDS: Record<string, () => void> = {
       },
     }),
   canhcut: () =>
+    (FUR_LEN = 0.06) &&
     bird({
       fur: '#3c4560',
       light: '#ffffff',
       wing: '#262d42',
       beak: 'nhon',
       extra: (b) => {
-        for (const k of [-1, 1]) stick(b, [k * 0.3, 0.12, 0.95], [0.4, 0.42, 0.1], '#ffffff', 'fur', -0.06, 0.02)
+        for (const k of [-1, 1]) stick(b, [k * 0.3, 0.12, 0.95], [0.4, 0.42, 0.12], '#ffffff', 'fur', 0.02, 0.06)
       },
     }),
   ech: frog,

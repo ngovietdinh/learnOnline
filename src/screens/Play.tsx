@@ -47,7 +47,7 @@ export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
       <div className="game-kinds">
         {(Object.keys(GAME_META) as GameKind[]).map((k) => (
           <button key={k} className={`chip ${k === kind ? 'now' : ''}`} onClick={() => go({ name: 'play', kind: k, view: v })}>
-            <EmoText text={GAME_META[k].emoji} still /> {GAME_META[k].name}
+            <EmoText text={GAME_META[k].emoji} size="1.2em" still /> {GAME_META[k].name}
           </button>
         ))}
       </div>

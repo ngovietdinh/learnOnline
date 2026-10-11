@@ -3248,7 +3248,6 @@ input[type='range'] {
 }
 .t-cauca .t-body {
   font-size: 5rem;
-  filter: hue-rotate(calc((var(--hue) - 30) * 1deg));
 }
 /* Nhãn đáp án dạng viên thuốc trắng dưới bạn thú — dễ đọc trên nền lông. */
 .t-cauca .t-label,
@@ -4392,4 +4391,12 @@ button:active .critter,
   .critter .c-closed {
     animation: none !important;
   }
+}
+.game-kinds .chip,
+.game-badge {
+  white-space: nowrap;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.3em;
 }

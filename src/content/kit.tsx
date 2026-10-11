@@ -58,7 +58,7 @@ export function cardsExplore(intro: string, cards: Card[], done: string, opts: {
               }
             }}
           >
-            <span className="tap-emoji"><EmoText text={c.emoji} /></span>
+            <span className="tap-emoji"><EmoText text={c.emoji} size="1.5em" /></span>
             <span className="tap-name">{c.name}</span>
             {c.sub && <span className="tap-sub">{c.sub}</span>}
           </button>

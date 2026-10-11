@@ -10,6 +10,8 @@ export const ALL_CRITTERS = [
   'xu', 'thach',
   // các bạn đồng hành lông ngắn mặt kem (bộ thiết kế riêng): Hồng, Bạc Hà, Mây, Kem; Hồng giơ tay mừng
   'hong', 'bacha', 'may', 'kem', 'hongvui',
+  // thêm từ bộ thiết kế con vật: nai, gấu mèo, nhím, rùa, hải cẩu, dơi, sóc, hươu cao cổ
+  'nai', 'gaumeo', 'nhim', 'rua', 'haicau', 'doi', 'soc', 'huou',
 ] as const
 export type CritterKind = (typeof ALL_CRITTERS)[number]
 
@@ -22,8 +24,9 @@ export const CRITTER_BY_EMOJI: Record<string, CritterKind> = {
   '🐱': 'meo', '🐈': 'meo', '🐶': 'cho', '🐕': 'cho', '🐩': 'cho', '🐰': 'tho', '🐇': 'tho', '🐻': 'gau', '🐼': 'gautruc', '🐨': 'koala',
   '🐯': 'ho', '🐅': 'ho', '🦁': 'sutu', '🦊': 'cao', '🐷': 'heo', '🐖': 'heo', '🐮': 'bo', '🐄': 'bo', '🐭': 'chuot', '🐁': 'chuot',
   '🐹': 'hamster', '🐵': 'khi', '🐒': 'khi', '🐑': 'cuu', '🐐': 'de', '🐴': 'ngua', '🐎': 'ngua', '🦄': 'kylan', '🐘': 'voi',
-  '🐔': 'ga', '🐓': 'ga', '🐤': 'gacon', '🐥': 'gacon', '🐣': 'gacon', '🦆': 'vit', '🐦': 'chim', '🦜': 'vet', '🦉': 'cu',
+  '🐔': 'gacon', '🐓': 'gacon', '🐤': 'gacon', '🐥': 'gacon', '🐣': 'gacon', '🦆': 'vit', '🐦': 'chim', '🦜': 'vet', '🦉': 'cu',
   '🐧': 'canhcut', '🐸': 'ech', '🐟': 'ca', '🐠': 'ca', '🐳': 'cavoi', '🐋': 'cavoi', '🐬': 'caheo', '🐙': 'bachtuoc',
+  '🦌': 'nai', '🦝': 'gaumeo', '🦔': 'nhim', '🐢': 'rua', '🦭': 'haicau', '🦇': 'doi', '🐿': 'soc', '🦒': 'huou',
 }
 
 const KIND_SET = new Set<string>(ALL_CRITTERS)
@@ -78,7 +81,7 @@ export function Critter({
 }
 
 /** Hiện biểu tượng: nếu là con vật thì thay bằng bạn thú bông, còn lại giữ nguyên biểu tượng. */
-export function Emo({ e, size = '1.5em', mood, still }: { e: string; size?: number | string; mood?: Mood; still?: boolean }) {
+export function Emo({ e, size = '1.9em', mood, still }: { e: string; size?: number | string; mood?: Mood; still?: boolean }) {
   const k = critterFor(e)
   return k ? <Critter kind={k} size={size} mood={mood} still={still} className="inline" /> : <>{e}</>
 }
@@ -88,7 +91,7 @@ const SegCtor = (Intl as unknown as { Segmenter?: new (l: string, o: { granulari
 const seg = SegCtor ? new SegCtor('vi', { granularity: 'grapheme' }) : null
 
 /** Chuỗi có lẫn biểu tượng (VD "🐱🐶", "🦉 Cú"): thay từng con vật bằng thú bông. */
-export function EmoText({ text, size = '1.5em', still }: { text: string; size?: number | string; still?: boolean }) {
+export function EmoText({ text, size = '1.9em', still }: { text: string; size?: number | string; still?: boolean }) {
   const whole = critterFor(text)
   if (whole) return <Critter kind={whole} size={size} still={still} className="inline" />
   const parts = seg ? Array.from(seg.segment(text), (x) => x.segment) : Array.from(text)

@@ -19,7 +19,7 @@ export const GAME_META: Record<GameKind, { name: string; emoji: string; intro: s
 /** Sắc màu tươi cho bóng bay, cá: đỏ, xanh dương, vàng, xanh lá, tím, cam. */
 const BRIGHT = [352, 205, 45, 140, 275, 22]
 /** Các bạn dưới nước cho trò câu cá. */
-const SEA = ['ca', 'cavoi', 'caheo', 'bachtuoc'] as const
+const SEA = ['cavoi', 'bachtuoc', 'haicau', 'rua'] as const
 
 /** Câu hỏi hợp để chơi: lựa chọn ngắn (hoặc là hình). */
 function playable(q: Question) {
@@ -165,7 +165,7 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
             onClick={(e) => tap(i, e.currentTarget)}
             aria-label={c.label || 'lựa chọn'}
           >
-            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body"><Critter kind={kind === 'cauca' ? SEA[layout[i] % SEA.length] : 'hamster'} size="1.3em" /></span>}
+            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body"><Critter kind={kind === 'cauca' ? SEA[layout[i] % SEA.length] : 'hamster'} size={kind === 'cauca' ? '1.35em' : '1.6em'} /></span>}
             <span className="t-label">{c.visual ?? c.label}</span>
             {kind === 'bongbay' && <span className="t-string" />}
           </button>

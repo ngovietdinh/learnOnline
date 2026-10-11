@@ -43,12 +43,12 @@ def cutout(img: Image.Image) -> Image.Image:
     bg = np.median(border, axis=0)
     d = np.max(bg - a, axis=2)  # tối hơn nền bao nhiêu
     sat = a.max(axis=2) - a.min(axis=2)
-    diff = np.maximum(d, sat * 1.2)
+    diff = np.maximum(np.abs(bg - a).max(axis=2), sat * 2.6)
     # tính vùng nền ở nửa độ phân giải cho nhanh
-    small = Image.fromarray((diff < 26).astype(np.uint8) * 255).resize((a.shape[1] // 2, a.shape[0] // 2))
+    small = Image.fromarray((diff < 11).astype(np.uint8) * 255).resize((a.shape[1] // 2, a.shape[0] // 2))
     reg = flood_bg(np.asarray(small) > 127)
     reg = np.asarray(Image.fromarray(reg.astype(np.uint8) * 255).resize((a.shape[1], a.shape[0]))) > 127
-    alpha = np.where(reg, np.clip((diff - 5) / 34, 0, 1), 1.0)
+    alpha = np.where(reg, np.clip((diff - 3) / 20, 0, 1), 1.0)
     # khử màu nền ở điểm nửa trong: C = a*F + (1-a)*B  →  F = (C - (1-a)B)/a
     al = np.maximum(alpha, 1e-3)[..., None]
     fg = np.clip((a - (1 - al) * bg) / al, 0, 255)
@@ -100,7 +100,7 @@ def square(im: Image.Image) -> Image.Image:
     al = np.asarray(im)[..., 3]
     ys, xs = np.where(al > 12)
     x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
-    side = int(max(x1 - x0, y1 - y0) * 1.06)
+    side = int(max(x1 - x0, y1 - y0) * 1.03)
     cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
     canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     canvas.paste(im.crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side)), (0, 0))
@@ -134,9 +134,29 @@ def eyes_of(im: Image.Image):
                 bw, bh = max(xs) - min(xs) + 1, max(ys) - min(ys) + 1
                 round_ = min(bw, bh) / max(bw, bh)
                 if len(pts) > 20 and round_ > 0.6:
-                    blobs.append((len(pts), sum(xs) / len(xs), sum(ys) / len(ys), max(bw, bh) / 2))
-    blobs.sort(reverse=True)
-    return blobs[:2]
+                    cx, cy, r = sum(xs) / len(xs), sum(ys) / len(ys), max(bw, bh) / 2
+                    # mắt thật nằm trên tấm mặt sáng màu (loại tai đen của gấu trúc, đốm bò…)
+                    y0, y1, x0, x1 = int(cy - r * 2.2), int(cy + r * 2.2), int(cx - r * 2.2), int(cx + r * 2.2)
+                    if y0 < 0 or x0 < 0 or y1 >= h or x1 >= w:
+                        continue
+                    yy, xx = np.mgrid[y0:y1, x0:x1]
+                    ring = (np.hypot(xx - cx, yy - cy) > r * 1.6) & (np.hypot(xx - cx, yy - cy) < r * 2.1)
+                    rc = a[y0:y1, x0:x1][ring][:, :3].mean(axis=0)
+                    # quanh mắt là tấm mặt màu kem: sáng và ngả vàng (lông trắng/đốm bò thì trung tính)
+                    if rc.mean() > 175 and 16 < rc[0] - rc[2] < 75 and cy < h * 0.5:
+                        blobs.append((len(pts), cx, cy, r))
+    # chọn cặp ngang hàng, cùng cỡ, cách nhau vừa phải
+    best, score = blobs[:2], 1e9
+    for i in range(len(blobs)):
+        for j in range(i + 1, len(blobs)):
+            p, q = blobs[i], blobs[j]
+            dx, dy = abs(p[1] - q[1]), abs(p[2] - q[2])
+            rr = (p[3] + q[3]) / 2
+            if dy < rr and 3 * rr < dx < 14 * rr and abs(p[3] - q[3]) < rr * 0.5:
+                sc = dy - (p[0] + q[0]) * 0.01
+                if sc < score:
+                    best, score = [p, q], sc
+    return best
 
 
 def blink(im: Image.Image) -> Image.Image:
@@ -174,9 +194,24 @@ def save(im: Image.Image, name: str):
     print(name, "ok", len(eyes_of(im)), "mắt")
 
 
-singles = {"hong": "jolly-pink-waving", "bacha": "jolly-mint-daisy", "may": "jolly-blue-strawhat"}
+import os
+
+ANIMALS = {
+    "cat": "meo", "dog": "cho", "bunny": "tho", "bear": "gau", "panda": "gautruc", "fox": "cao", "frog": "ech",
+    "duck": "vit", "penguin": "canhcut", "elephant": "voi", "lion": "sutu", "tiger": "ho", "monkey": "khi",
+    "koala": "koala", "pig": "heo", "cow": "bo", "sheep": "cuu", "hamster": "hamster", "owl": "cu", "chick": "gacon",
+    "octopus": "bachtuoc", "whale": "cavoi", "deer": "nai", "raccoon": "gaumeo", "hedgehog": "nhim", "turtle": "rua",
+    "seal": "haicau", "bat": "doi", "squirrel": "soc", "giraffe": "huou",
+}
+ONLY = os.environ.get("CHI")  # VD CHI=dong-vat để chỉ xử lý bộ con vật
+PICK = set(filter(None, os.environ.get("CON", "").split(",")))  # VD CON=cuu,huou để làm lại vài bạn
+singles = {} if ONLY == "dong-vat" else {"hong": "jolly-pink-waving", "bacha": "jolly-mint-daisy", "may": "jolly-blue-strawhat"}
+for en, vi in ANIMALS.items():
+    f = f"{SRC}/jolly-animal-{en}.webp"
+    if ONLY != "co-ban" and os.path.exists(f) and (not PICK or vi in PICK):
+        singles[vi] = f"jolly-animal-{en}"
 for name, f in singles.items():
-    save(square(cutout(Image.open(f"{SRC}/{f}.webp"))), name)
+    save(square(largest_part(cutout(Image.open(f"{SRC}/{f}.webp")))), name)
 
 def classes(arr: np.ndarray):
     rgb = arr[..., :3].astype(np.float32) / 255
@@ -208,6 +243,8 @@ def isolate(group: Image.Image, keep: str, x0: int, x1: int, face: tuple, cuts: 
     return largest_part(Image.fromarray(arr, "RGBA"))
 
 
+if ONLY == "dong-vat":
+    sys.exit(0)
 group = cutout(Image.open(f"{SRC}/jolly-family-lineup.webp"))
 sx, sy = group.width / 1920, group.height / 1280
 S = lambda b: tuple(int(v * (sx if i % 2 == 0 else sy)) for i, v in enumerate(b))

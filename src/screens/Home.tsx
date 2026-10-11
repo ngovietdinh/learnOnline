@@ -114,7 +114,7 @@ export function HomeScreen() {
             {young ? `Chào ${me.name}! Hôm nay mình cùng học và chơi nhé!` : `Chào ${me.name}! Sẵn sàng khám phá điều mới chưa nào?`}
             {stats && stats.streakDays > 1 && <div className="muted">🔥 {stats.streakDays} ngày liên tiếp — giỏi lắm!</div>}
           </div>
-          <Critter kind={buddyOf(me.avatar)} size={young ? 140 : 118} className="hero-buddy" />
+          <Critter kind={buddyOf(me.avatar)} size={young ? 190 : 160} className="hero-buddy" />
         </div>
         {next && nextLesson && (
           <button

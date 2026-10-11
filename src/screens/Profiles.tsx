@@ -17,9 +17,9 @@ export function ProfilesScreen() {
     <div className="profiles-screen">
       <div className="brand">
         <div className="brand-buddies" aria-hidden>
-          <Critter kind="kem" size={118} />
-          <Critter kind="hongvui" size={140} />
-          <Critter kind="bacha" size={118} />
+          <Critter kind="kem" size={170} />
+          <Critter kind="hongvui" size={200} />
+          <Critter kind="bacha" size={170} />
         </div>
         <h1>Học Bản Chất</h1>
         <p>Học mà chơi, chơi mà học — hiểu tận gốc. Cho bé mầm non và tiểu học (1–11 tuổi).</p>

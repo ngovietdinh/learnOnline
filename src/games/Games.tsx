@@ -8,6 +8,7 @@ import { praise, speak } from '../core/speech'
 import { questionSegs, randomPoolQuestion } from '../core/script'
 import { shuffle } from '../core/rng'
 import { Critter, EmoText } from '../components/Critter'
+import { Icon } from '../components/Icon'
 
 export const GAME_META: Record<GameKind, { name: string; emoji: string; intro: string }> = {
   bongbay: { name: 'Bóng bay', emoji: '🎈', intro: 'Trò chơi bóng bay! Chạm vào quả bóng có đáp án đúng nào!' },
@@ -83,7 +84,7 @@ function Finish({ stars, of, onDone }: { stars: number; of: number; onDone: () =
         ))}
       </div>
       <button className="btn btn-primary btn-big" onClick={onDone}>
-        Tiếp tục ➜
+        Tiếp tục <Icon name="next" size={18} />
       </button>
     </div>
   )

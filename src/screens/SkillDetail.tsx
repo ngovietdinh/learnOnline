@@ -5,7 +5,9 @@ import { missingPrereqs, skillState } from '../core/progress'
 import { go } from '../core/router'
 import { LESSON_BY_ID } from '../lessons/registry'
 import { ProgressRing, useStage } from '../components/ui'
-import { EmoText } from '../components/Critter'
+import { Critter } from '../components/Critter'
+import { Icon } from '../components/Icon'
+import { plushOfSkill } from '../components/Cards'
 
 export function SkillDetail({ id }: { id: string }) {
   const skill = SKILL_BY_ID[id]
@@ -21,11 +23,11 @@ export function SkillDetail({ id }: { id: string }) {
 
   return (
     <div className="skill-detail">
-      <button className="btn btn-ghost" onClick={() => history.back()}>
-        ← Quay lại
+      <button className="text-btn" onClick={() => history.back()}>
+        <Icon name="back" size={18} /> Quay lại
       </button>
       <header className="sd-head" style={{ ['--subj' as string]: subj.color }}>
-        <span className="sd-icon"><EmoText text={lesson?.emoji ?? subj.icon} /></span>
+        <Critter kind={plushOfSkill(skill)} crop size={96} className="sd-plush" />
         <div>
           <small>
             {subj.name} · {STAGE_BY_ID[skill.stage].name} · {skill.grade}
@@ -36,7 +38,7 @@ export function SkillDetail({ id }: { id: string }) {
       </header>
 
       <div className="big-idea compact">
-        <span className="gem">💎</span>
+        <span className="gem"><Icon name="gem" size={26} /></span>
         <p>{skill.essence}</p>
       </div>
 
@@ -46,7 +48,7 @@ export function SkillDetail({ id }: { id: string }) {
           <div className="chip-row">
             {missing.map((m) => (
               <button key={m.id} className="chip" onClick={() => go({ name: 'skill', id: m.id })}>
-                🔒 {m.title}
+                <Icon name="lock" size={14} /> {m.title}
               </button>
             ))}
           </div>
@@ -56,12 +58,12 @@ export function SkillDetail({ id }: { id: string }) {
       <div className="btn-row">
         {lesson ? (
           <>
-            <button className="btn btn-primary btn-big" onClick={() => go({ name: 'lesson', id: lesson.id, mode: 'learn' })}>
-              {state === 'mastered' ? '🔁 Học lại' : state === 'locked' ? 'Vẫn học bài này' : '📘 Học bài này'}
+            <button className="primary-btn btn-big" onClick={() => go({ name: 'lesson', id: lesson.id, mode: 'learn' })}>
+              {state === 'mastered' ? 'Học lại' : state === 'locked' ? 'Vẫn học bài này' : 'Học bài này'} <Icon name="next" size={20} />
             </button>
             {!stage.gentleErrors && state !== 'mastered' && (
               <button className="btn" onClick={() => go({ name: 'lesson', id: lesson.id, mode: 'test' })}>
-                ⚡ Em đã biết — kiểm tra nhanh
+                <Icon name="sparkle" size={18} /> Em đã biết — kiểm tra nhanh
               </button>
             )}
           </>
@@ -71,7 +73,7 @@ export function SkillDetail({ id }: { id: string }) {
       </div>
 
       <section className="panel">
-        <h4>📋 Bám sát chuẩn</h4>
+        <h4><Icon name="shield" size={18} /> Bám sát chuẩn</h4>
         <ul className="std-list">
           {skill.standards.map((s, i) => (
             <li key={i}>
@@ -83,7 +85,7 @@ export function SkillDetail({ id }: { id: string }) {
       </section>
 
       <section className="panel">
-        <h4>🧩 Vị trí trong bản đồ tri thức</h4>
+        <h4><Icon name="map" size={18} /> Vị trí trong bản đồ tri thức</h4>
         <div className="graph-row">
           <div>
             <small className="muted">Dựa trên</small>
@@ -100,11 +102,11 @@ export function SkillDetail({ id }: { id: string }) {
               <span className="chip ghost">Nền tảng đầu tiên</span>
             )}
           </div>
-          <span className="graph-arrow">➜</span>
+          <span className="graph-arrow"><Icon name="next" size={20} /></span>
           <div>
             <span className="chip now">{skill.title}</span>
           </div>
-          <span className="graph-arrow">➜</span>
+          <span className="graph-arrow"><Icon name="next" size={20} /></span>
           <div>
             <small className="muted">Mở đường cho</small>
             {unlocks.length ? (
@@ -122,7 +124,7 @@ export function SkillDetail({ id }: { id: string }) {
 
       {p && (
         <section className="panel">
-          <h4>📈 Tiến độ của em</h4>
+          <h4><Icon name="chart" size={18} /> Tiến độ của em</h4>
           <p>
             Đã học {p.attempts} lần · {Math.round(p.seconds / 60)} phút ·{' '}
             {p.status === 'mastered' ? `Ôn tiếp vào ${new Date(p.due ?? Date.now()).toLocaleDateString('vi-VN')}` : 'Chưa vững — luyện thêm nhé'}

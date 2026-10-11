@@ -6,9 +6,11 @@ import { poolQuestion, POOL } from '../core/script'
 import type { Level } from '../core/stages'
 import type { Question } from '../lessons/types'
 import { QuestionView } from '../components/QuestionView'
-import { Confetti, Mascot, useSay, useStage } from '../components/ui'
+import { Confetti, useSay, useStage } from '../components/ui'
 import { go } from '../core/router'
 import { REVIEW_INTERVALS } from '../core/mastery'
+import { Teacher } from '../components/Teacher'
+import { Icon } from '../components/Icon'
 
 interface Item {
   skillId: string
@@ -43,11 +45,12 @@ export function ReviewScreen() {
   if (!items.length)
     return (
       <div className="review">
-        <Mascot emoji={stage.mascot} mood="happy">
-          Hôm nay chưa có bài nào cần ôn. Kiến thức của em vẫn đang "tươi" lắm! 🌿
-        </Mascot>
-        <button className="btn btn-primary" onClick={() => go({ name: 'home' })}>
-          🏠 Về trang chính
+        <div className="teacher-say">
+          <Teacher size={150} mood="happy" />
+          <div className="bubble">Hôm nay chưa có bài nào cần ôn. Kiến thức của em vẫn đang "tươi" lắm! 🌿</div>
+        </div>
+        <button className="primary-btn" onClick={() => go({ name: 'courses' })}>
+          Học bài mới <Icon name="next" size={18} />
         </button>
       </div>
     )
@@ -56,9 +59,10 @@ export function ReviewScreen() {
     return (
       <div className="review">
         <Confetti count={50} />
-        <Mascot emoji={stage.mascot} mood="happy">
-          Xong buổi ôn! Mỗi lần nhớ lại đúng, khoảng cách đến lần ôn sau sẽ dài ra.
-        </Mascot>
+        <div className="teacher-say">
+          <Teacher size={150} mood="cheer" />
+          <div className="bubble">Xong buổi ôn! Mỗi lần nhớ lại đúng, khoảng cách đến lần ôn sau sẽ dài ra.</div>
+        </div>
         <ul className="review-summary">
           {summary.map(([id, r]) => {
             const box = progress[id]?.box ?? 1
@@ -70,8 +74,8 @@ export function ReviewScreen() {
             )
           })}
         </ul>
-        <button className="btn btn-primary" onClick={() => go({ name: 'home' })}>
-          🏠 Về trang chính
+        <button className="primary-btn" onClick={() => go({ name: 'home' })}>
+          <Icon name="home" size={18} /> Về trang chủ
         </button>
       </div>
     )
@@ -80,7 +84,7 @@ export function ReviewScreen() {
   return (
     <div className="review">
       <div className="review-head">
-        <h2>🔁 Ôn tập giãn cách</h2>
+        <h2>Ôn tập giãn cách</h2>
         <span>
           Câu {i + 1}/{items.length} · <i>{it.title}</i>
         </span>

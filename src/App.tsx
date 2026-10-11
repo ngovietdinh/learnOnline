@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useRoute, go } from './core/router'
 import { useActiveProfile, useMyProgress, useStore } from './core/store'
-import { stageForAge } from './core/stages'
+import { gradeForAge, stageForAge } from './core/stages'
 import { setMusicTrack, setSoundEnabled, startMusic, stopMusic, sfx } from './core/sound'
 import { canSpeak, hasRecordedVoice, hasVietnameseVoice, loadVoiceManifest, onVoicesChanged, setNarrate, setVoiceProfile, setVoiceStyle } from './core/speech'
-import { AmbientBackground, FxLayer } from './components/Effects'
+import { FxLayer } from './components/Effects'
 import { dueReviews } from './core/progress'
 import { SKILL_BY_ID } from './core/curriculum'
 import { LESSON_BY_ID } from './lessons/registry'
@@ -17,7 +17,10 @@ import { SkillDetail } from './screens/SkillDetail'
 import { ParentScreen } from './screens/Parent'
 import { PlayScreen } from './screens/Play'
 import type { GameKind } from './lessons/types'
-import { EmoText } from './components/Critter'
+import { Critter, avatarKind } from './components/Critter'
+import { Icon, type IconName } from './components/Icon'
+import { CoursesScreen } from './screens/Courses'
+import { ProgressScreen } from './screens/Progress'
 
 export default function App() {
   const route = useRoute()
@@ -50,7 +53,7 @@ export default function App() {
 
   // Giao diện "lớn lên" cùng người học: mỗi giai đoạn một chủ đề màu, cỡ chữ, vùng chạm.
   // Đặt ngay khi vẽ (không chờ effect) để nền chuyển động đọc đúng màu của giai đoạn.
-  const theme = route.name === 'profiles' || route.name === 'parent' || !me ? 'neutral' : stage.id
+  const theme = !me ? 'neutral' : stage.id
   document.documentElement.dataset.stage = theme
   document.documentElement.style.setProperty('--touch', `${stage.touchTarget}px`)
 
@@ -94,79 +97,150 @@ export default function App() {
     case 'play':
       screen = me ? <PlayScreen kind={route.kind as GameKind} view={route.view} /> : null
       break
+    case 'courses':
+      screen = me ? <CoursesScreen view={route.view} /> : null
+      break
+    case 'progress':
+      screen = me ? <ProgressScreen /> : null
+      break
   }
 
   const immersive = route.name === 'lesson' || route.name === 'play'
+  const shell = !immersive && route.name !== 'profiles' && !!me
   return (
-    <div className="app">
-      <div className="bg-blobs" aria-hidden>
-        <i />
-        <i />
-        <i />
-      </div>
-      <AmbientBackground stage={theme} />
-      {!immersive && route.name !== 'profiles' && <TopBar />}
-      <VoiceNotice />
-      <div className={`page ${immersive ? 'immersive' : ''}`} key={route.name === 'lesson' ? 'lesson' : route.name}>
-        {screen}
-      </div>
+    <div className={`app ${shell ? 'with-shell' : ''} ${immersive ? 'is-immersive' : ''}`}>
+      {shell && <Sidebar route={route.name} />}
+      <main className="main">
+        {shell && <TopBar />}
+        <VoiceNotice />
+        <div className={`page ${immersive ? 'immersive' : ''}`}>
+          <div className="view-anim" key={route.name === 'lesson' ? `lesson-${route.id}` : route.name}>
+            {screen}
+          </div>
+        </div>
+      </main>
+      {shell && <BottomNav route={route.name} />}
       <FxLayer />
     </div>
   )
 }
+
+type NavKey = 'home' | 'courses' | 'play' | 'review' | 'progress'
+const NAV: { key: NavKey; label: string; icon: IconName; to: () => void }[] = [
+  { key: 'home', label: 'Trang chủ', icon: 'home', to: () => go({ name: 'home' }) },
+  { key: 'courses', label: 'Bài học', icon: 'book', to: () => go({ name: 'courses' }) },
+  { key: 'play', label: 'Trò chơi', icon: 'game', to: () => go({ name: 'play', kind: 'bongbay' }) },
+  { key: 'review', label: 'Ôn tập', icon: 'review', to: () => go({ name: 'review' }) },
+  { key: 'progress', label: 'Tiến bộ', icon: 'chart', to: () => go({ name: 'progress' }) },
+]
+const activeNav = (r: string): NavKey | null =>
+  r === 'home' ? 'home' : r === 'courses' || r === 'skill' || r === 'map' ? 'courses' : r === 'review' ? 'review' : r === 'progress' || r === 'parent' ? 'progress' : null
+
+function NavButtons({ route, due }: { route: string; due: number }) {
+  const on = activeNav(route)
+  return (
+    <>
+      {NAV.map((n) => (
+        <button
+          key={n.key}
+          className={`nav-btn ${on === n.key ? 'active' : ''}`}
+          aria-current={on === n.key ? 'page' : undefined}
+          onClick={() => {
+            sfx.tap()
+            n.to()
+          }}
+        >
+          <Icon name={n.icon} />
+          <span>{n.label}</span>
+          {n.key === 'review' && due > 0 && <em className="nav-badge">{due}</em>}
+        </button>
+      ))}
+    </>
+  )
+}
+
+function Sidebar({ route }: { route: string }) {
+  const me = useActiveProfile()
+  const progress = useMyProgress()
+  const due = dueReviews(progress).length
+  return (
+    <aside className="sidebar" aria-label="Điều hướng chính">
+      <button className="side-brand" onClick={() => go({ name: 'home' })} aria-label="Về trang chủ">
+        <Critter kind={avatarKind(me?.avatar)} crop size={52} />
+        <b>Học Bản Chất</b>
+      </button>
+      <nav className="nav-list">
+        <NavButtons route={route} due={due} />
+      </nav>
+      <div className="parent-card">
+        <Critter kind="nhim" crop size={64} />
+        <strong>Góc phụ huynh</strong>
+        <p>Xem thời gian học, kỹ năng nổi bật và chỗ bé hay nhầm.</p>
+        <button onClick={() => go({ name: 'parent' })}>Xem báo cáo</button>
+        <button className="link" onClick={() => go({ name: 'map' })}>
+          Chương trình học
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+function BottomNav({ route }: { route: string }) {
+  const progress = useMyProgress()
+  const due = dueReviews(progress).length
+  return (
+    <nav className="bottom-nav" aria-label="Điều hướng">
+      <NavButtons route={route} due={due} />
+    </nav>
+  )
+}
+
+const WEEKDAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy']
 
 function TopBar() {
   const me = useActiveProfile()
   const stats = useStore((s) => (s.activeId ? s.stats[s.activeId] : undefined))
   const settings = useStore((s) => s.settings)
   const setSettings = useStore((s) => s.setSettings)
-  const progress = useMyProgress()
-  const due = dueReviews(progress).length
   const stage = stageForAge(me?.age ?? 8)
   const narrating = settings.narrate ?? stage.narrate
-  const music = settings.music ?? stage.music
+  const music = (settings.music ?? stage.music) && settings.sound
+  const now = new Date()
+  const grade = stage.id === 'tieuhoc' ? `Học sinh lớp ${me?.grade ?? gradeForAge(me?.age ?? 7)}` : stage.id === 'mam' ? 'Bé nhà trẻ' : 'Bé mẫu giáo'
   return (
     <header className="topbar">
-      <button className="tb-brand" onClick={() => go({ name: me ? 'home' : 'profiles' })}>
-        🌱 <span>Học Bản Chất</span>
-      </button>
-      <nav className="tb-nav">
-        {me && (
-          <button onClick={() => go({ name: 'home' })} title="Trang chính">
-            🏠<span>Học</span>
-          </button>
-        )}
-        {me && (
-          <button onClick={() => go({ name: 'review' })} title="Ôn tập">
-            🔁<span>Ôn tập</span>
-            {due > 0 && <em className="badge">{due}</em>}
-          </button>
-        )}
-        <button onClick={() => go({ name: 'map' })} title="Chương trình">
-          🗺️<span>Chương trình</span>
-        </button>
-      </nav>
+      <div className="tb-date">
+        {WEEKDAYS[now.getDay()]}, {now.getDate()} tháng {now.getMonth() + 1} · <span>Một ngày thật vui để học</span>
+      </div>
       <div className="tb-right">
-        {me && stats && (
-          <span className="tb-stats" title="Chuỗi ngày học · điểm sao">
-            <span className="flame">🔥</span>
-            {stats.streakDays} <span className="star-spin">⭐</span>
-            <CountUp value={stats.xp} />
-          </span>
+        {stats && (
+          <div className="tb-pills" title="Chuỗi ngày học · điểm sao">
+            <span className="pill pill-flame">
+              <Icon name="flame" size={17} /> {stats.streakDays}
+            </span>
+            <span className="pill pill-star">
+              <Icon name="star" size={17} fill="currentColor" /> <CountUp value={stats.xp} />
+            </span>
+          </div>
         )}
-        <button className="icon-btn" onClick={() => setSettings({ narrate: !narrating })} title={narrating ? 'Tắt đọc to' : 'Bật đọc to'}>
-          {narrating ? '🗣️' : '🤐'}
-        </button>
-        <button className={`icon-btn ${music && settings.sound ? 'on' : ''}`} onClick={() => setSettings({ music: !music })} title={music ? 'Tắt nhạc nền' : 'Bật nhạc nền'} aria-label={music ? 'Tắt nhạc nền' : 'Bật nhạc nền'}>
-          {music && settings.sound ? '🎵' : '🎶'}
-        </button>
-        <button className="icon-btn" onClick={() => setSettings({ sound: !settings.sound })} title={settings.sound ? 'Tắt âm thanh' : 'Bật âm thanh'}>
-          {settings.sound ? '🔊' : '🔇'}
-        </button>
+        <div className="tb-tools">
+          <button className={`tool ${narrating ? 'on' : ''}`} onClick={() => setSettings({ narrate: !narrating })} aria-label={narrating ? 'Tắt cô đọc to' : 'Bật cô đọc to'} title={narrating ? 'Tắt cô đọc to' : 'Bật cô đọc to'}>
+            <Icon name={narrating ? 'voice' : 'voiceOff'} size={19} />
+          </button>
+          <button className={`tool ${music ? 'on' : ''}`} onClick={() => setSettings({ music: !(settings.music ?? stage.music) })} aria-label={music ? 'Tắt nhạc nền' : 'Bật nhạc nền'} title={music ? 'Tắt nhạc nền' : 'Bật nhạc nền'}>
+            <Icon name={music ? 'music' : 'musicOff'} size={19} />
+          </button>
+          <button className={`tool ${settings.sound ? 'on' : ''}`} onClick={() => setSettings({ sound: !settings.sound })} aria-label={settings.sound ? 'Tắt âm thanh' : 'Bật âm thanh'} title={settings.sound ? 'Tắt âm thanh' : 'Bật âm thanh'}>
+            <Icon name={settings.sound ? 'sound' : 'mute'} size={19} />
+          </button>
+        </div>
         {me && (
-          <button className="tb-avatar" onClick={() => go({ name: 'profiles' })} title="Đổi người học">
-            <span><EmoText text={me.avatar} /></span>
-            <b>{me.name}</b>
+          <button className="profile" onClick={() => go({ name: 'profiles' })} title="Đổi người học">
+            <span className="profile-copy">
+              <strong>{me.name}</strong>
+              <span>{grade}</span>
+            </span>
+            <Critter kind={avatarKind(me.avatar)} crop size={46} />
           </button>
         )}
       </div>
@@ -249,7 +323,7 @@ function NotFound() {
     <div className="panel center">
       <p>Không tìm thấy bài học này.</p>
       <button className="btn btn-primary" onClick={() => go({ name: 'home' })}>
-        🏠 Về trang chính
+        Về trang chủ
       </button>
     </div>
   )

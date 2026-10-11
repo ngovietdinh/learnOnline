@@ -10,6 +10,8 @@ export type Route =
   | { name: 'skill'; id: string }
   | { name: 'parent' }
   | { name: 'play'; kind: string; view?: string }
+  | { name: 'courses'; view?: string }
+  | { name: 'progress' }
 
 export function parse(hash: string): Route {
   const [path, query = ''] = hash.replace(/^#\/?/, '').split('?')
@@ -30,6 +32,10 @@ export function parse(hash: string): Route {
       return { name: 'parent' }
     case 'nha':
       return { name: 'home' }
+    case 'bai-hoc':
+      return { name: 'courses', view: q.get('o') ?? undefined }
+    case 'tien-bo':
+      return { name: 'progress' }
     case 'choi':
       if (parts[1]) return { name: 'play', kind: parts[1], view: q.get('o') ?? undefined }
       break
@@ -55,6 +61,10 @@ export function href(r: Route): string {
       return '#/phu-huynh'
     case 'play':
       return `#/choi/${r.kind}${r.view ? `?o=${r.view}` : ''}`
+    case 'courses':
+      return `#/bai-hoc${r.view ? `?o=${r.view}` : ''}`
+    case 'progress':
+      return '#/tien-bo'
   }
 }
 

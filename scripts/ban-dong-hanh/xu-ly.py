@@ -5,6 +5,7 @@
 - Tự tạo khung "mắt nhắm cười" (tô mắt bằng màu mặt rồi thêu nét cong) để các bạn biết chớp mắt.
 
 Chạy: python3 -I scripts/ban-dong-hanh/xu-ly.py <thư-mục-ảnh-gốc> public/thu-bong
+     (CHI=dong-vat: chỉ bộ con vật; CON=cuu,huou,cotho: chỉ làm lại vài bạn; "cotho" = cô Thỏ đeo kính)
 """
 
 import sys
@@ -205,7 +206,7 @@ ANIMALS = {
 }
 ONLY = os.environ.get("CHI")  # VD CHI=dong-vat để chỉ xử lý bộ con vật
 PICK = set(filter(None, os.environ.get("CON", "").split(",")))  # VD CON=cuu,huou để làm lại vài bạn
-singles = {} if ONLY == "dong-vat" else {"hong": "jolly-pink-waving", "bacha": "jolly-mint-daisy", "may": "jolly-blue-strawhat"}
+singles = {} if ONLY == "dong-vat" else {k: v for k, v in {"hong": "jolly-pink-waving", "bacha": "jolly-mint-daisy", "may": "jolly-blue-strawhat"}.items() if not PICK or k in PICK}
 for en, vi in ANIMALS.items():
     f = f"{SRC}/jolly-animal-{en}.webp"
     if ONLY != "co-ban" and os.path.exists(f) and (not PICK or vi in PICK):
@@ -243,13 +244,99 @@ def isolate(group: Image.Image, keep: str, x0: int, x1: int, face: tuple, cuts: 
     return largest_part(Image.fromarray(arr, "RGBA"))
 
 
-if ONLY == "dong-vat":
-    sys.exit(0)
-group = cutout(Image.open(f"{SRC}/jolly-family-lineup.webp"))
-sx, sy = group.width / 1920, group.height / 1280
-S = lambda b: tuple(int(v * (sx if i % 2 == 0 else sy)) for i, v in enumerate(b))
-save(square(isolate(group, "kem", 0, int(714 * sx), S((200, 370, 540, 620)), [S((700, 0, 1920, 660))])), "kem")
-save(
-    square(isolate(group, "hong", int(560 * sx), int(1360 * sx), S((790, 280, 1110, 610)), [S((0, 640, 722, 1280)), S((1205, 640, 1920, 1280))])),
-    "hongvui",
-)
+def lineup():
+    group = cutout(Image.open(f"{SRC}/jolly-family-lineup.webp"))
+    sx, sy = group.width / 1920, group.height / 1280
+    S = lambda b: tuple(int(v * (sx if i % 2 == 0 else sy)) for i, v in enumerate(b))
+    save(square(isolate(group, "kem", 0, int(714 * sx), S((200, 370, 540, 620)), [S((700, 0, 1920, 660))])), "kem")
+    save(
+        square(isolate(group, "hong", int(560 * sx), int(1360 * sx), S((790, 280, 1110, 610)), [S((0, 640, 722, 1280)), S((1205, 640, 1920, 1280))])),
+        "hongvui",
+    )
+
+
+if ONLY != "dong-vat" and not PICK:
+    lineup()
+
+
+# ───────────────────────── Cô Thỏ: cô giáo thú bông (thỏ + kính tròn) ─────────────────────────
+
+
+def inpaint(rgb: np.ndarray, hole: np.ndarray, y0: int, y1: int, x0: int, x1: int, steps: int = 500):
+    sub = rgb[y0:y1, x0:x1]
+    hl = hole[y0:y1, x0:x1]
+    sub[hl] = sub[~hl].mean(axis=0)
+    for _ in range(steps):
+        avg = (np.roll(sub, 1, 0) + np.roll(sub, -1, 0) + np.roll(sub, 1, 1) + np.roll(sub, -1, 1)) / 4
+        sub[hl] = avg[hl]
+    rgb[y0:y1, x0:x1] = sub
+
+
+def glasses(im: Image.Image, eyes) -> Image.Image:
+    S = 4
+    W, H = im.size
+    layer = Image.new("RGBA", (W * S, H * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    r = sum(e[3] for e in eyes) / len(eyes)
+    R = r * 2.05
+    pts = sorted((e[1], e[2]) for e in eyes)
+    col = (70, 52, 84, 255)
+    wid = max(3, int(r * 0.36 * S))
+    for cx, cy in pts:
+        d.ellipse(((cx - R) * S, (cy - R) * S, (cx + R) * S, (cy + R) * S), fill=(255, 255, 255, 34), outline=col, width=wid)
+    (ax, ay), (bx, by) = pts
+    mid = ((ax + bx) / 2, (ay + by) / 2 - r * 0.5)
+    d.arc(((ax + R - r * 0.2) * S, (mid[1] - r * 0.6) * S, (bx - R + r * 0.2) * S, (mid[1] + r * 1.4) * S), 200, 340, fill=col, width=wid)
+    # gọng tai
+    d.line(((ax - R) * S, ay * S, (ax - R - r * 1.3) * S, (ay - r * 0.5) * S), fill=col, width=wid)
+    d.line(((bx + R) * S, by * S, (bx + R + r * 1.3) * S, (by - r * 0.5) * S), fill=col, width=wid)
+    out = im.copy()
+    out.alpha_composite(layer.resize((W, H), Image.LANCZOS))
+    return out
+
+
+def talking(im: Image.Image, eyes) -> Image.Image:
+    """Miệng mở (đang nói): lấp nét cười cũ, vẽ miệng hé tròn có lưỡi hồng."""
+    arr = np.asarray(im).astype(np.float32)
+    rgb = arr[..., :3].copy()
+    lum = rgb.mean(axis=2)
+    (ax, ay, ar), (bx, by, br) = sorted((e[1], e[2], e[3]) for e in eyes)
+    r = (ar + br) / 2
+    y0, y1 = int(max(ay, by) + r * 1.2), int(max(ay, by) + r * 5.5)
+    x0, x1 = int(ax + r), int(bx - r)
+    reg = np.zeros(lum.shape, bool)
+    reg[y0:y1, x0:x1] = True
+    dark = (lum < 110) & reg
+    ys, xs = np.where(dark)
+    mx, my = xs.mean(), ys.mean()
+    yy, xx = np.mgrid[0 : lum.shape[0], 0 : lum.shape[1]]
+    hole = np.zeros_like(dark)
+    for _ in range(3):  # nới vùng nét cười một chút cho sạch viền
+        pass
+    hole = (np.abs(xx - mx) < (xs.max() - xs.min()) / 2 + r * 0.6) & (np.abs(yy - my) < (ys.max() - ys.min()) / 2 + r * 0.6)
+    inpaint(rgb, hole, y0 - int(r), y1 + int(r), x0 - int(r), x1 + int(r))
+    out = Image.fromarray(np.dstack([rgb, arr[..., 3]]).astype(np.uint8), "RGBA")
+    S = 4
+    w, h = r * 1.25, r * 1.05
+    layer = Image.new("RGBA", (out.width * S, out.height * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    box = ((mx - w) * S, (my - h * 0.55) * S, (mx + w) * S, (my + h * 1.15) * S)
+    d.chord(box, 0, 180, fill=(92, 34, 48, 255))
+    d.rectangle((box[0], box[1] + (box[3] - box[1]) / 2 - 2 * S, box[2], box[1] + (box[3] - box[1]) / 2 + 0.5 * S), fill=(92, 34, 48, 255))
+    tw, th = w * 0.62, h * 0.55
+    d.ellipse(((mx - tw) * S, (my + h * 0.25) * S, (mx + tw) * S, (my + h * 0.25 + th * 1.6) * S), fill=(236, 120, 140, 255))
+    mask = Image.new("L", layer.size, 0)
+    ImageDraw.Draw(mask).chord(box, 0, 180, fill=255)
+    ImageDraw.Draw(mask).rectangle((box[0], box[1] + (box[3] - box[1]) / 2 - 2 * S, box[2], box[1] + (box[3] - box[1]) / 2 + 0.5 * S), fill=255)
+    layer.putalpha(Image.fromarray(np.minimum(np.asarray(layer)[..., 3], np.asarray(mask))))
+    out.alpha_composite(layer.resize(out.size, Image.LANCZOS))
+    return out
+
+
+if os.path.exists(f"{SRC}/jolly-animal-bunny.webp") and ONLY != "co-ban" and (not PICK or "cotho" in PICK):
+    tho = square(largest_part(cutout(Image.open(f"{SRC}/jolly-animal-bunny.webp"))))
+    ey = eyes_of(tho)
+    glasses(tho, ey).save(f"{OUT}/cotho.webp", "WEBP", quality=88, method=6)
+    glasses(blink(tho), ey).save(f"{OUT}/cotho-nham.webp", "WEBP", quality=88, method=6)
+    glasses(talking(tho, ey), ey).save(f"{OUT}/cotho-noi.webp", "WEBP", quality=88, method=6)
+    print("cotho ok")

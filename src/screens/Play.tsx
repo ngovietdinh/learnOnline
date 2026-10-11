@@ -9,6 +9,8 @@ import { useStage } from '../components/ui'
 import { Teacher } from '../components/Teacher'
 import type { Level } from '../core/stages'
 import { EmoText } from '../components/Critter'
+import { Icon } from '../components/Icon'
+import { Critter } from '../components/Critter'
 
 /** Sân chơi: chơi bằng câu hỏi của các bài trong lớp đang xem — ưu tiên bài em đã học. */
 export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
@@ -31,11 +33,11 @@ export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
   return (
     <div className="play-screen">
       <header className="player-head">
-        <button className="btn btn-ghost" onClick={() => go({ name: 'home' })} aria-label="Về trang chính">
-          ✕
+        <button className="icon-close" onClick={() => go({ name: 'home' })} aria-label="Về trang chủ">
+          <Icon name="close" size={20} />
         </button>
         <div className="player-title">
-          <span className="player-emoji"><EmoText text={GAME_META[kind].emoji} /></span>
+          <Critter kind={({ bongbay: 'heo', cauca: 'cavoi', chuotchui: 'hamster', latthe: 'cao' } as const)[kind]} crop size={54} />
           <div>
             <h2>{GAME_META[kind].name}</h2>
             <small>

@@ -6,6 +6,7 @@ import { cheer, praise, type Seg } from '../core/speech'
 import { correctSegs, questionSegs, wrongSegs } from '../core/script'
 import { centerOf, fx } from '../core/fx'
 import { SpeakButton } from './ui'
+import { Icon } from './Icon'
 
 interface Props {
   q: Question
@@ -120,7 +121,7 @@ export function QuestionView({ q, gentle, showLevel, say, onResult, onNext, rewa
             <b>Bản chất:</b> {q.explain}
           </p>
           <button className="btn btn-primary" onClick={onNext} autoFocus>
-            Tiếp tục ➜
+            Tiếp tục <Icon name="next" size={18} />
           </button>
         </div>
       )}

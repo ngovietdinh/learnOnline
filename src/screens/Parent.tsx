@@ -6,7 +6,9 @@ import { dueReviews, recommend } from '../core/progress'
 import { misconceptionLabel } from '../core/misconceptions'
 import { go } from '../core/router'
 import { ProgressRing } from '../components/ui'
-import { EmoText } from '../components/Critter'
+import { Critter, avatarKind } from '../components/Critter'
+import { Icon } from '../components/Icon'
+import { PageIntro } from '../components/Cards'
 
 const EMPTY: Record<string, SkillProgress> = {}
 
@@ -24,14 +26,15 @@ function ParentGate({ onPass }: { onPass: () => void }) {
         else setErr(true)
       }}
     >
-      <h2>👪 Dành cho phụ huynh & giáo viên</h2>
+      <Critter kind="nhim" crop size={96} />
+      <h2>Dành cho phụ huynh & giáo viên</h2>
       <label>
         Để tiếp tục, hãy tính: <b>{a} × {b} = ?</b>
         <input inputMode="numeric" value={v} onChange={(e) => setV(e.target.value)} autoFocus />
       </label>
       {err && <p className="note warn">Chưa đúng, thử lại nhé.</p>}
       <div className="btn-row">
-        <button className="btn btn-primary">Vào</button>
+        <button className="primary-btn">Vào <Icon name="next" size={18} /></button>
         <button type="button" className="btn btn-ghost" onClick={() => history.back()}>
           Quay lại
         </button>
@@ -48,18 +51,17 @@ export function ParentScreen() {
   if (!ok) return <ParentGate onPass={() => setOk(true)} />
   return (
     <div className="parent">
-      <div className="parent-head">
-        <h2>👪 Báo cáo học tập</h2>
-        <button className="btn btn-ghost" onClick={() => go({ name: 'profiles' })}>
-          ← Chọn người học
+      <PageIntro title="Báo cáo học tập" sub="Mức hiểu từng bài, lịch ôn và chỗ bé hay nhầm — để cả nhà cùng khích lệ." plush="nhim">
+        <button className="text-btn" onClick={() => go({ name: 'profiles' })}>
+          <Icon name="back" size={18} /> Chọn người học
         </button>
-      </div>
+      </PageIntro>
       {!profiles.length && <p className="note">Chưa có hồ sơ nào.</p>}
       {profiles.map((p) => (
         <LearnerReport key={p.id} profile={p} />
       ))}
       <section className="panel">
-        <h3>⚙️ Cài đặt chung</h3>
+        <h3><Icon name="settings" size={20} /> Cài đặt chung</h3>
         <label className="toggle">
           <input type="checkbox" checked={settings.sound} onChange={(e) => setSettings({ sound: e.target.checked })} /> Âm thanh hiệu ứng
         </label>
@@ -117,7 +119,7 @@ function LearnerReport({ profile }: { profile: Profile }) {
   return (
     <section className="panel report">
       <header className="report-head">
-        <span className="profile-avatar"><EmoText text={profile.avatar} /></span>
+        <Critter kind={avatarKind(profile.avatar)} crop size={64} />
         <div>
           <h3>{profile.name}</h3>
           <small>
@@ -145,11 +147,11 @@ function LearnerReport({ profile }: { profile: Profile }) {
           <small>Phút học</small>
         </div>
         <div>
-          <b>🔥 {stats?.streakDays ?? 0}</b>
+          <b>{stats?.streakDays ?? 0}</b>
           <small>Ngày liên tiếp</small>
         </div>
         <div>
-          <b>⭐ {stats?.xp ?? 0}</b>
+          <b>{stats?.xp ?? 0}</b>
           <small>Điểm sao</small>
         </div>
       </div>
@@ -173,7 +175,9 @@ function LearnerReport({ profile }: { profile: Profile }) {
                     {skill.title}
                     <small className="muted"> · {skill.grade}</small>
                   </td>
-                  <td>{p.status === 'mastered' ? '🏆 Vững' : '⏳ Đang học'}</td>
+                  <td>
+                    <span className={`state st-${p.status}`}>{p.status === 'mastered' ? 'Đã vững' : 'Đang học'}</span>
+                  </td>
                   <td>{Math.round(p.pKnow * 100)}%</td>
                   <td>{p.due ? new Date(p.due).toLocaleDateString('vi-VN') : '—'}</td>
                   <td className="quote-cell">{p.explanation ? `“${p.explanation}”` : <span className="muted">—</span>}</td>
@@ -188,7 +192,7 @@ function LearnerReport({ profile }: { profile: Profile }) {
 
       <div className="two-col">
         <div>
-          <h4>🧭 Con hay nhầm ở đâu</h4>
+          <h4><Icon name="target" size={18} /> Con hay nhầm ở đâu</h4>
           {topMis.length ? (
             <ul className="mis-list">
               {topMis.map(([k, n]) => (
@@ -202,7 +206,7 @@ function LearnerReport({ profile }: { profile: Profile }) {
           )}
         </div>
         <div>
-          <h4>💡 Gợi ý cho người lớn</h4>
+          <h4><Icon name="bulb" size={18} /> Gợi ý cho người lớn</h4>
           <ul className="tips">
             {due.length > 0 && <li>Có {due.length} bài đến hạn ôn — chỉ mất vài phút, nên làm hôm nay.</li>}
             {next && <li>Bài nên học tiếp: <b>{next.title}</b> — {next.essence}</li>}

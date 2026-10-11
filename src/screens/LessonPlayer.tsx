@@ -20,17 +20,19 @@ import type { Seg } from '../core/speech'
 import { centerOf, fx } from '../core/fx'
 import { praise } from '../core/speech'
 import { Critter, EmoText } from '../components/Critter'
+import { Icon, type IconName } from '../components/Icon'
+import { plushOfSkill } from '../components/Cards'
 
 type Step = 'hook' | 'explore' | 'essence' | 'game' | 'practice' | 'teach' | 'remember'
 
-const STEP_META: Record<Step, { icon: string; name: string }> = {
-  hook: { icon: '❓', name: 'Tò mò' },
-  explore: { icon: '🔍', name: 'Khám phá' },
-  essence: { icon: '💎', name: 'Bản chất' },
-  game: { icon: '🎮', name: 'Trò chơi' },
-  practice: { icon: '🎯', name: 'Luyện tập' },
-  teach: { icon: '🗣️', name: 'Giảng lại' },
-  remember: { icon: '🧠', name: 'Ghi nhớ' },
+const STEP_META: Record<Step, { icon: IconName; name: string }> = {
+  hook: { icon: 'question', name: 'Tò mò' },
+  explore: { icon: 'search', name: 'Khám phá' },
+  essence: { icon: 'gem', name: 'Bản chất' },
+  game: { icon: 'game', name: 'Trò chơi' },
+  practice: { icon: 'target', name: 'Luyện tập' },
+  teach: { icon: 'speech', name: 'Giảng lại' },
+  remember: { icon: 'brain', name: 'Ghi nhớ' },
 }
 
 /** Câu hỏi lấy từ "kho" cố định của bài (mỗi câu đều có giọng cô thu sẵn), tránh lặp câu vừa hỏi. */
@@ -188,11 +190,11 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
   return (
     <div className="player">
       <header className="player-head">
-        <button className="btn btn-ghost" onClick={() => go({ name: 'home' })} aria-label="Thoát bài học">
-          ✕
+        <button className="icon-close" onClick={() => go({ name: 'home' })} aria-label="Thoát bài học">
+          <Icon name="close" size={20} />
         </button>
         <div className="player-title">
-          <span className="player-emoji"><EmoText text={lesson.emoji} /></span>
+          <Critter kind={plushOfSkill(skill)} crop size={54} />
           <div>
             <h2>{lesson.title}</h2>
             <small>
@@ -204,7 +206,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
       <ol className="stepper" aria-label="Các bước bài học">
         {steps.map((s, i) => (
           <li key={s} className={i === stepIdx ? 'now' : i < stepIdx ? 'past' : ''}>
-            <span className="step-icon">{STEP_META[s].icon}</span>
+            {i < stepIdx ? <Icon name="check" size={17} /> : <Icon name={STEP_META[s].icon} size={17} />}
             <span className="step-name">{STEP_META[s].name}</span>
           </li>
         ))}
@@ -215,13 +217,13 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
           <section className="step-hook">
             <div className="hook-visual">{lesson.hook.visual}</div>
             <div className="teacher-say">
-              <Teacher size={stage.readsAlone ? 120 : 150} mood="think" />
+              <Teacher size={stage.readsAlone ? 170 : 200} mood="think" />
               <div className="bubble">
                 {lesson.hook.text} <SpeakButton text={lesson.hook.text} />
               </div>
             </div>
             <button className="btn btn-primary btn-big" onClick={next}>
-              {stage.readsAlone ? 'Cùng tìm hiểu nào ➜' : '▶️ Chơi nào!'}
+              {stage.readsAlone ? 'Cùng tìm hiểu nào' : 'Chơi nào!'} <Icon name="next" size={20} />
             </button>
           </section>
         )}
@@ -255,7 +257,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
               </p>
             )}
             <button className="btn btn-primary btn-big" onClick={next}>
-              Luyện tập để chắc chắn ➜
+              Luyện tập để chắc chắn <Icon name="next" size={20} />
             </button>
           </section>
         )}
@@ -264,7 +266,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
           <section className="step-practice">
             <div className="practice-top">
               <span className={`mini-mascot react-${mood}`} key={`${qKey}-${mood}`} aria-hidden>
-                <Teacher size={64} mood={mood === 'happy' ? 'happy' : mood === 'oops' ? 'oops' : 'idle'} />
+                <Teacher size={84} mood={mood === 'happy' ? 'happy' : mood === 'oops' ? 'oops' : 'idle'} />
               </span>
               <div className="mastery-bar" aria-label="Tiến độ đến khi vững">
               <div className="mastery-fill" style={{ width: `${Math.round(masteryProgress * 100)}%` }} />
@@ -311,7 +313,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
             />
             <div className="row-center">
               <button className="btn btn-ghost" onClick={next}>
-                Bỏ qua trò {GAME_META[gameKind].name} ➜
+                Bỏ qua trò {GAME_META[gameKind].name} <Icon name="next" size={18} />
               </button>
             </div>
           </section>
@@ -343,7 +345,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
               </div>
             )}
             <div className="teacher-say">
-              <Teacher size={110} mood={ps.mastered ? 'cheer' : 'idle'} />
+              <Teacher size={170} mood={ps.mastered ? 'cheer' : 'idle'} />
               <div className="bubble">
                 {ps.mastered
                   ? mode === 'test'
@@ -374,16 +376,16 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
             <div className="btn-row center">
               {mode === 'test' && !ps.mastered && (
                 <button className="btn btn-primary" onClick={() => go({ name: 'lesson', id: lesson.id, mode: 'learn' })}>
-                  📘 Học bài này từ đầu
+                  <Icon name="book" size={18} /> Học bài này từ đầu
                 </button>
               )}
               {recommendNext && recommendNext.id !== skill.id && recommendNext.lessonId && (
                 <button className="btn btn-primary" onClick={() => go({ name: 'lesson', id: recommendNext.lessonId!, mode: 'learn' })}>
-                  Bài tiếp: {recommendNext.title} ➜
+                  Bài tiếp: {recommendNext.title} <Icon name="next" size={18} />
                 </button>
               )}
               <button className="btn" onClick={() => go({ name: 'home' })}>
-                🏠 Về trang chính
+                <Icon name="home" size={18} /> Về trang chủ
               </button>
             </div>
           </section>
@@ -465,7 +467,7 @@ function TeachBackStep({
           <textarea id="own" rows={3} placeholder={tb.ownWordsHint} value={explanation} onChange={(e) => setExplanation(e.target.value)} />
           <small className="muted">Tự giảng lại là cách nhớ lâu nhất. Bố mẹ/thầy cô sẽ xem được lời giải thích này.</small>
           <button className="btn btn-primary btn-big" onClick={onDone}>
-            {explanation.trim() ? 'Hoàn thành ➜' : 'Bỏ qua và hoàn thành ➜'}
+            {explanation.trim() ? 'Hoàn thành' : 'Bỏ qua và hoàn thành'} <Icon name="next" size={20} />
           </button>
         </div>
       )}

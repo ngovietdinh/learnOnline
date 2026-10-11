@@ -5,14 +5,16 @@ import { viewSkills, VIEWS } from '../core/views'
 import { useMyProgress } from '../core/store'
 import { skillState } from '../core/progress'
 import { go } from '../core/router'
+import { Icon, type IconName } from '../components/Icon'
+import { PageIntro } from '../components/Cards'
 
-const LOOP = [
-  { icon: '❓', name: 'Tò mò', text: 'Một câu hỏi/hiện tượng làm em muốn biết — não sẵn sàng tiếp nhận.' },
-  { icon: '🔍', name: 'Khám phá', text: 'Tự tay thao tác mô hình (cụ thể → hình ảnh) và tự thấy quy luật.' },
-  { icon: '💎', name: 'Bản chất', text: 'Gọi tên quy luật: cái gốc là gì, VÌ SAO đúng, hình dung thế nào.' },
-  { icon: '🎯', name: 'Luyện tập', text: 'Leo từ Nhận biết đến Vận dụng cao; mỗi lựa chọn sai chỉ đúng ngộ nhận.' },
-  { icon: '🗣️', name: 'Giảng lại', text: 'Chọn lời giải thích đúng và tự nói lại bằng lời của mình.' },
-  { icon: '🧠', name: 'Ghi nhớ', text: 'Thẻ tóm tắt + lịch ôn giãn cách 1–3–7–16–35–90 ngày.' },
+const LOOP: { icon: IconName; name: string; text: string }[] = [
+  { icon: 'question', name: 'Tò mò', text: 'Một câu hỏi/hiện tượng làm em muốn biết — não sẵn sàng tiếp nhận.' },
+  { icon: 'search', name: 'Khám phá', text: 'Tự tay thao tác mô hình (cụ thể → hình ảnh) và tự thấy quy luật.' },
+  { icon: 'gem', name: 'Bản chất', text: 'Gọi tên quy luật: cái gốc là gì, VÌ SAO đúng, hình dung thế nào.' },
+  { icon: 'target', name: 'Luyện tập', text: 'Leo từ Nhận biết đến Vận dụng cao; mỗi lựa chọn sai chỉ đúng ngộ nhận.' },
+  { icon: 'speech', name: 'Giảng lại', text: 'Chọn lời giải thích đúng và tự nói lại bằng lời của mình.' },
+  { icon: 'brain', name: 'Ghi nhớ', text: 'Thẻ tóm tắt + lịch ôn giãn cách 1–3–7–16–35–90 ngày.' },
 ]
 
 export function CurriculumMap() {
@@ -24,17 +26,20 @@ export function CurriculumMap() {
 
   return (
     <div className="map-screen">
-      <h2>🗺️ Chương trình học mầm non & tiểu học</h2>
-      <p className="muted">
-        {playable} bài học tương tác đầy đủ từ nhà trẻ đến lớp 5, nối thành một đồ thị tri thức liên tục · bám {Object.keys(FRAMEWORKS).length} bộ chuẩn · mỗi bài có trò chơi và giọng cô đọc.
-      </p>
+      <PageIntro
+        title="Chương trình học"
+        sub={`${playable} bài học tương tác từ nhà trẻ đến lớp 5, nối thành một đồ thị tri thức liên tục · bám ${Object.keys(FRAMEWORKS).length} bộ chuẩn · mỗi bài có trò chơi và giọng cô đọc.`}
+        plush="cu"
+      />
 
       <section className="loop">
         <h3>Vòng "Hiểu bản chất" — mọi bài học đều theo 6 bước</h3>
         <ol className="loop-steps">
           {LOOP.map((l) => (
             <li key={l.name}>
-              <span>{l.icon}</span>
+              <span className="loop-ico">
+                <Icon name={l.icon} size={22} />
+              </span>
               <b>{l.name}</b>
               <small>{l.text}</small>
             </li>
@@ -62,7 +67,7 @@ export function CurriculumMap() {
         </button>
         {subjects.map((s) => (
           <button key={s} className={`chip ${subject === s ? 'now' : ''}`} onClick={() => setSubject(s)}>
-            {SUBJECTS[s].icon} {SUBJECTS[s].name}
+            {SUBJECTS[s].name}
           </button>
         ))}
       </div>
@@ -74,7 +79,7 @@ export function CurriculumMap() {
               <th>Môn \ Lớp</th>
               {VIEWS.map((v) => (
                 <th key={v.id} className={`v-${v.id}`}>
-                  {v.icon} {v.name}
+                  {v.name}
                   <small>{v.sub}</small>
                 </th>
               ))}
@@ -84,7 +89,7 @@ export function CurriculumMap() {
             {shown.map((subj) => (
               <tr key={subj}>
                 <th>
-                  {SUBJECTS[subj].icon} {SUBJECTS[subj].name}
+                  {SUBJECTS[subj].name}
                 </th>
                 {VIEWS.map((v) => (
                   <td key={v.id}>
@@ -105,7 +110,7 @@ export function CurriculumMap() {
       </div>
 
       <section className="panel">
-        <h3>📋 Bộ chuẩn tham chiếu</h3>
+        <h3>Bộ chuẩn tham chiếu</h3>
         <ul className="std-list">
           {(Object.keys(FRAMEWORKS) as Framework[]).map((f) => (
             <li key={f}>

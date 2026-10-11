@@ -17,6 +17,8 @@ export type CritterKind = (typeof ALL_CRITTERS)[number]
 
 /** Các bạn đồng hành bé có thể chọn; bạn được chọn sẽ chào bé ở trang chính. */
 export const BUDDIES = ['hong', 'bacha', 'may', 'kem'] as const
+/** Bạn thú dùng làm ảnh đại diện (ảnh đại diện cũ là biểu tượng con vật cũng đổi được). */
+export const avatarKind = (avatar?: string): CritterKind => (avatar && critterFor(avatar)) || 'hong'
 export const buddyOf = (avatar?: string): CritterKind => ((BUDDIES as readonly string[]).includes(avatar ?? '') ? (avatar as CritterKind) : 'hong')
 
 /** Biểu tượng cảm xúc → bạn thú bông tương ứng. */
@@ -43,6 +45,24 @@ function src(kind: CritterKind, closed: boolean) {
   return inline?.[name] ?? `thu-bong/${name}.webp`
 }
 
+/** Bạn thú đại diện cho mỗi môn — chọn theo bài để các thẻ không trùng nhau. */
+const SUBJECT_PLUSH: Record<string, CritterKind[]> = {
+  toan: ['gau', 'voi', 'sutu', 'koala', 'hamster', 'nhim', 'gautruc'],
+  ngonngu: ['huou', 'soc', 'cuu', 'gaumeo', 'meo', 'cho'],
+  khoahoc: ['ech', 'rua', 'nai', 'haicau', 'vit', 'cavoi'],
+  tienganh: ['cu', 'canhcut', 'doi', 'bachtuoc', 'khi'],
+  nhanthuc: ['cao', 'heo', 'bo', 'gacon', 'ho', 'tho'],
+}
+/** Bạn thú cho một bài: con vật trong biểu tượng bài nếu có, không thì bạn thú của môn. */
+export function plushFor(emoji: string | undefined, subject: string, seed = ''): CritterKind {
+  const own = emoji ? critterFor(emoji) : undefined
+  if (own && !['ca', 'caheo', 'chim', 'vet', 'ngua', 'kylan', 'de', 'chuot', 'ga', 'xu', 'thach'].includes(own)) return own
+  const pool = SUBJECT_PLUSH[subject] ?? SUBJECT_PLUSH.nhanthuc
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
+  return pool[h % pool.length]
+}
+
 export type Mood = 'idle' | 'happy' | 'sad'
 
 /**
@@ -54,6 +74,7 @@ export function Critter({
   size = 96,
   mood = 'idle',
   still = false,
+  crop = false,
   label,
   className = '',
 }: {
@@ -61,6 +82,8 @@ export function Critter({
   size?: number | string
   mood?: Mood
   still?: boolean
+  /** Khung tròn chỉ thấy phần đầu — như ảnh đại diện. */
+  crop?: boolean
   label?: string
   className?: string
 }) {
@@ -68,7 +91,7 @@ export function Critter({
   const delay = ((kind.length * 7 + kind.charCodeAt(0)) % 9) * 0.41
   return (
     <span
-      className={`critter c-${kind} mood-${mood} ${still ? 'still' : ''} ${className}`}
+      className={`critter c-${kind} mood-${mood} ${still ? 'still' : ''} ${crop ? 'crop' : ''} ${className}`}
       style={{ width: s, height: s, ['--cd' as string]: `${delay.toFixed(2)}s` }}
       role={label ? 'img' : undefined}
       aria-label={label}

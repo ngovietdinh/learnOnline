@@ -4400,3 +4400,24 @@ button:active .critter,
   align-items: center;
   gap: 0.3em;
 }
+/* Các bạn đồng hành */
+.brand-buddies {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+}
+.brand-buddies .critter + .critter {
+  margin-left: -18px;
+}
+.hero-buddy {
+  align-self: flex-end;
+}
+.cheer-buddy {
+  align-self: flex-end;
+}
+@media (max-width: 560px) {
+  .hero-buddy {
+    display: none;
+  }
+}

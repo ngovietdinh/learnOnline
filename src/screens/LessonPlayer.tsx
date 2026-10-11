@@ -19,7 +19,7 @@ import type { GameKind } from '../lessons/types'
 import type { Seg } from '../core/speech'
 import { centerOf, fx } from '../core/fx'
 import { praise } from '../core/speech'
-import { EmoText } from '../components/Critter'
+import { Critter, EmoText } from '../components/Critter'
 
 type Step = 'hook' | 'explore' | 'essence' | 'game' | 'practice' | 'teach' | 'remember'
 
@@ -351,6 +351,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
                     : 'Tuyệt vời! Em đã hiểu và vững bài này. Hẹn em ôn lại vào ngày mai để nhớ lâu nhé!'
                   : 'Em đã tiến bộ rồi! Ngày mai mình luyện thêm một chút để thật vững nhé.'}
               </div>
+              {ps.mastered && <Critter kind="hongvui" size={130} className="cheer-buddy hop" />}
             </div>
             <div className="memory-cards">
               {lesson.remember.map((r, i) => (

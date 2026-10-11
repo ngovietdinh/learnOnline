@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useStore } from '../core/store'
 import { FOCUS_STAGES, gradeForAge, MAX_AGE, STAGES, stageForAge } from '../core/stages'
-import { Teacher } from '../components/Teacher'
 import { go } from '../core/router'
 import { sfx } from '../core/sound'
 import { EmoText } from '../components/Critter'
+import { Critter } from '../components/Critter'
 
-const AVATARS = ['xu', 'thach', '🐼', '🦊', '🐯', '🐨', '🐸', '🦄', '🐙', '🦁', '🐰', '🐧', '🐳', '🦉']
+const AVATARS = ['hong', 'bacha', 'may', 'kem', 'xu', 'thach', '🐼', '🦊', '🐯', '🐨', '🐸', '🦄', '🐙', '🦁', '🐰', '🐧', '🐳', '🦉']
 
 export function ProfilesScreen() {
   const profiles = useStore((s) => s.profiles)
@@ -16,7 +16,11 @@ export function ProfilesScreen() {
   return (
     <div className="profiles-screen">
       <div className="brand">
-        <Teacher size={120} mood="happy" />
+        <div className="brand-buddies" aria-hidden>
+          <Critter kind="kem" size={118} />
+          <Critter kind="hongvui" size={140} />
+          <Critter kind="bacha" size={118} />
+        </div>
         <h1>Học Bản Chất</h1>
         <p>Học mà chơi, chơi mà học — hiểu tận gốc. Cho bé mầm non và tiểu học (1–11 tuổi).</p>
       </div>
@@ -67,7 +71,7 @@ function CreateProfile({ onDone, canCancel }: { onDone: () => void; canCancel: b
   const addProfile = useStore((s) => s.addProfile)
   const [name, setName] = useState('')
   const [age, setAge] = useState(7)
-  const [avatar, setAvatar] = useState(AVATARS[1])
+  const [avatar, setAvatar] = useState(AVATARS[0])
   const [grade, setGrade] = useState<number | null>(null)
   const st = stageForAge(age)
   const g = grade ?? gradeForAge(age)

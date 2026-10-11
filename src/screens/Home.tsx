@@ -11,6 +11,7 @@ import { GAME_META } from '../games/Games'
 import type { GameKind } from '../lessons/types'
 import { sfx } from '../core/sound'
 import { EmoText } from '../components/Critter'
+import { Critter, buddyOf } from '../components/Critter'
 
 const STATE_BADGE: Record<SkillState, string> = {
   mastered: '🏆 Đã vững',
@@ -113,6 +114,7 @@ export function HomeScreen() {
             {young ? `Chào ${me.name}! Hôm nay mình cùng học và chơi nhé!` : `Chào ${me.name}! Sẵn sàng khám phá điều mới chưa nào?`}
             {stats && stats.streakDays > 1 && <div className="muted">🔥 {stats.streakDays} ngày liên tiếp — giỏi lắm!</div>}
           </div>
+          <Critter kind={buddyOf(me.avatar)} size={young ? 140 : 118} className="hero-buddy" />
         </div>
         {next && nextLesson && (
           <button

@@ -8,8 +8,14 @@ export const ALL_CRITTERS = [
   'ngua', 'kylan', 'voi', 'ga', 'gacon', 'vit', 'chim', 'vet', 'cu', 'canhcut', 'ech', 'ca', 'cavoi', 'caheo', 'bachtuoc',
   // hai bạn đồng hành: Bông Xù (lông dài) và Thạch (trong veo)
   'xu', 'thach',
+  // các bạn đồng hành lông ngắn mặt kem (bộ thiết kế riêng): Hồng, Bạc Hà, Mây, Kem; Hồng giơ tay mừng
+  'hong', 'bacha', 'may', 'kem', 'hongvui',
 ] as const
 export type CritterKind = (typeof ALL_CRITTERS)[number]
+
+/** Các bạn đồng hành bé có thể chọn; bạn được chọn sẽ chào bé ở trang chính. */
+export const BUDDIES = ['hong', 'bacha', 'may', 'kem'] as const
+export const buddyOf = (avatar?: string): CritterKind => ((BUDDIES as readonly string[]).includes(avatar ?? '') ? (avatar as CritterKind) : 'hong')
 
 /** Biểu tượng cảm xúc → bạn thú bông tương ứng. */
 export const CRITTER_BY_EMOJI: Record<string, CritterKind> = {

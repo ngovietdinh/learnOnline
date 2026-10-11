@@ -340,3 +340,76 @@ if os.path.exists(f"{SRC}/jolly-animal-bunny.webp") and ONLY != "co-ban" and (no
     glasses(blink(tho), ey).save(f"{OUT}/cotho-nham.webp", "WEBP", quality=88, method=6)
     glasses(talking(tho, ey), ey).save(f"{OUT}/cotho-noi.webp", "WEBP", quality=88, method=6)
     print("cotho ok")
+
+
+# ───────────────────────── Gia đình & mọi người (cùng phong cách mặt kem) ─────────────────────────
+
+
+def recolor(im: Image.Image, hue_deg: float, sat_mul: float = 1.0, light: float = 0.0, eyes=None) -> Image.Image:
+    """Đổi màu lông, giữ nguyên tấm mặt kem (vùng elip quanh hai mắt) và má hồng."""
+    import colorsys  # noqa: F401  (chỉ để rõ ý: xoay sắc độ trong không gian HSV)
+
+    arr = np.asarray(im).astype(np.float32) / 255
+    rgb, al = arr[..., :3], arr[..., 3]
+    mx, mn = rgb.max(axis=2), rgb.min(axis=2)
+    v = mx
+    s = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    d = np.maximum(mx - mn, 1e-6)
+    h = np.where(mx == r, ((g - b) / d) % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4)) / 6
+    keep = np.zeros(al.shape, bool)
+    ey = eyes or eyes_of(im)
+    if len(ey) == 2:
+        (ax, ay), (bx, by) = sorted((e[1], e[2]) for e in ey)
+        rr = (ey[0][3] + ey[1][3]) / 2
+        cx, cy = (ax + bx) / 2, (ay + by) / 2 + rr
+        gap = bx - ax
+        yy, xx = np.mgrid[0 : al.shape[0], 0 : al.shape[1]]
+        keep = ((xx - cx) / (gap * 1.08)) ** 2 + ((yy - cy + gap * 0.05) / (gap * 0.84)) ** 2 < 1
+    h2 = (h + hue_deg / 360) % 1
+    s2 = np.clip(s * sat_mul, 0, 1)
+    v2 = np.clip(v + light, 0, 1)
+    i = np.floor(h2 * 6)
+    f = h2 * 6 - i
+    p, q, t = v2 * (1 - s2), v2 * (1 - f * s2), v2 * (1 - (1 - f) * s2)
+    i = i.astype(int) % 6
+    out = np.select(
+        [i[..., None] == k for k in range(6)],
+        [np.dstack(c) for c in [(v2, t, p), (q, v2, p), (p, v2, t), (p, q, v2), (t, p, v2), (v2, p, q)]],
+    )
+    # trong vùng mặt chỉ giữ màu da kem, má hồng, mắt — viền lông cũ lọt vào vẫn được đổi màu
+    hd = h * 360
+    facey = (s < 0.16) | (v < 0.3) | (((hd < 48) | (hd > 335)) & (s < 0.42) & (v > 0.75))
+    out = np.where((keep & facey)[..., None], rgb, out)
+    return Image.fromarray((np.dstack([out, al]) * 255).clip(0, 255).astype(np.uint8), "RGBA")
+
+
+def shrink(im: Image.Image, k: float) -> Image.Image:
+    w, h = im.size
+    small = im.resize((int(w * k), int(h * k)), Image.LANCZOS)
+    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    out.paste(small, ((w - small.width) // 2, h - small.height - int(h * 0.01)), small)
+    return out
+
+
+def people():
+    load = lambda n: Image.open(f"{OUT}/{n}.webp").convert("RGBA")
+    def put(name, im):
+        im.save(f"{OUT}/nguoi-{name}.webp", "WEBP", quality=88, method=6)
+        print("người", name, "ok")
+    hong, bacha, may, kem, hongvui = (load(n) for n in ("hong", "bacha", "may", "kem", "hongvui"))
+    put("me", hong)  # mẹ
+    put("bo", may)  # bố
+    put("ong", glasses(kem, eyes_of(kem)))  # ông: lông trắng kem + kính
+    put("ba", glasses(recolor(bacha, 120, 0.55, 0.03), eyes_of(bacha)))  # bà: lông tím nhạt, cầm hoa, đeo kính
+    put("chi", hongvui)  # chị/em gái
+    put("anh", recolor(hong, 35, 1.25))  # anh/em trai: lông cam vàng
+    put("tre", recolor(bacha, -55, 1.1))  # bạn nhỏ: lông vàng chanh
+    put("embe", shrink(recolor(hong, 18, 0.7, 0.04), 0.74))  # em bé: nhỏ, lông đào
+    put("nguoi", recolor(may, 70, 0.9))  # người: lông tím
+    if os.path.exists(f"{SRC}/jolly-family-lineup.webp"):
+        put("gia-dinh", square(cutout(Image.open(f"{SRC}/jolly-family-lineup.webp"))))
+
+
+if ONLY == "nguoi" or (not PICK and ONLY != "dong-vat"):
+    people()

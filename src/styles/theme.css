@@ -8,8 +8,9 @@
 
 :root,
 :root[data-stage] {
-  --font: 'Be Vietnam Pro', 'Noto Color Emoji', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Baloo 2', 'Be Vietnam Pro', 'Noto Color Emoji', sans-serif;
+  /* 'Thu Bong': phông emoji thú bông riêng — mọi hình trong bài đều cùng một phong cách */
+  --font: 'Thu Bong', 'Be Vietnam Pro', 'Noto Color Emoji', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Thu Bong', 'Baloo 2', 'Be Vietnam Pro', 'Noto Color Emoji', sans-serif;
 
   --bg: #f6fbfa;
   --bg2: #f6fbfa;

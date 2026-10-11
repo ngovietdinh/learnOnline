@@ -137,7 +137,7 @@ function loop() {
       case 'text': {
         const s = 1 + Math.sin(Math.min(1, t * 4) * Math.PI) * 0.25
         ctx.scale(s, s)
-        ctx.font = `800 ${p.size}px "Baloo 2", system-ui, sans-serif`
+        ctx.font = `800 ${p.size}px "Thu Bong", "Baloo 2", system-ui, sans-serif`
         ctx.textAlign = 'center'
         ctx.lineWidth = 5
         ctx.strokeStyle = 'rgba(255,255,255,.95)'

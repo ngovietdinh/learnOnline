@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMyProgress, useStore } from '../core/store'
 import { viewSkills, VIEWS, type ViewId } from '../core/views'
 import { LESSON_BY_ID } from '../lessons/registry'
-import { canPlay, GameRound, GAME_META } from '../games/Games'
+import { canPlay, GameRound, GAME_META, GAME_PLUSH } from '../games/Games'
 import type { GameKind, Lesson } from '../lessons/types'
 import { go } from '../core/router'
 import { useStage } from '../components/ui'
@@ -37,7 +37,7 @@ export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
           <Icon name="close" size={20} />
         </button>
         <div className="player-title">
-          <Critter kind={({ bongbay: 'heo', cauca: 'cavoi', chuotchui: 'hamster', latthe: 'cao' } as const)[kind]} crop size={54} />
+          <Critter kind={GAME_PLUSH[kind]} crop size={54} />
           <div>
             <h2>{GAME_META[kind].name}</h2>
             <small>

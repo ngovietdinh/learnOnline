@@ -32,7 +32,8 @@ export function randomPoolQuestion(lesson: Lesson, level: Level, avoid?: string)
 export function questionSegs(q: Question): Seg[] {
   if (q.speakSegs) return q.speakSegs
   const ask = q.speak ?? q.prompt
-  if (q.choices.some((c) => c.visual) || q.layout === 'big') return [ask]
+  // đáp án đều là hình: chỉ đọc câu hỏi; còn đáp án chữ thì đọc cả các lựa chọn cho bé nghe
+  if (q.choices.every((c) => c.visual) || q.layout === 'big') return [ask]
   return [`${ask} Chọn một: ${q.choices.map((c) => c.label).join(', hoặc ')}.`]
 }
 

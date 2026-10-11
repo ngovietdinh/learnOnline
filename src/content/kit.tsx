@@ -24,7 +24,8 @@ export interface Explore {
 }
 
 const segList = (s: Seg | Seg[]) => (Array.isArray(s) ? s : [s])
-const PASTEL = ['#ff8fb8', '#ffc145', '#5ad1a4', '#6aa8ff', '#b58cff', '#ff9f5a', '#4fd1e0', '#f472b6']
+/** Nền thẻ trung tính (kem) — chỉ bài màu sắc mới tô thẻ đúng màu của vật, tránh làm bé loạn màu. */
+const NEUTRAL = '#e9dfcc'
 
 /** Thẻ chạm – nghe: chạm từng thẻ để nghe cô giới thiệu. Xong hết thì sang bước sau. */
 export function cardsExplore(intro: string, cards: Card[], done: string, opts: { big?: boolean } = {}): Explore {
@@ -37,12 +38,12 @@ export function cardsExplore(intro: string, cards: Card[], done: string, opts: {
           <button
             key={c.key}
             className={`tap-card ${seen.has(c.key) ? 'seen' : ''} ${bouncing === c.key ? 'bounce' : ''}`}
-            style={{ ['--c' as string]: c.color ?? PASTEL[i % PASTEL.length], ['--i' as string]: i }}
+            style={{ ['--c' as string]: c.color ?? NEUTRAL, ['--i' as string]: i }}
             aria-label={c.name}
             onClick={(e) => {
               sfx.boing()
               const [x, y] = centerOf(e.currentTarget)
-              fx.burst(x, y, { count: 22, colors: [c.color ?? PASTEL[i % PASTEL.length], '#ffffff', '#ffd23f'], shapes: ['star', 'circle', 'heart'] })
+              fx.burst(x, y, { count: 22, colors: [c.color ?? NEUTRAL, '#ffffff', '#ffd23f'], shapes: ['star', 'circle', 'heart'] })
               say(c.say)
               setBouncing(c.key)
               setTimeout(() => setBouncing(null), 600)

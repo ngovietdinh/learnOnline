@@ -95,7 +95,7 @@ export function vocab(cards: Card[], o: VocabOpts = {}): Gen {
       choices: set.map((c) => ({
         label: c.name,
         visual: (
-          <span className="big-visual" style={{ ['--c' as string]: c.color ?? '#ffd6e7' }}>
+          <span className="big-visual" style={{ ['--c' as string]: c.color ?? '#e9dfcc' }}>
             <Emo e={c.emoji} />
           </span>
         ),

@@ -22,6 +22,7 @@ import { praise } from '../core/speech'
 import { Critter, EmoText } from '../components/Critter'
 import { Icon, type IconName } from '../components/Icon'
 import { plushOfSkill } from '../components/Cards'
+import { forChild } from '../core/pictures'
 
 type Step = 'hook' | 'explore' | 'essence' | 'game' | 'practice' | 'teach' | 'remember'
 
@@ -37,7 +38,7 @@ const STEP_META: Record<Step, { icon: IconName; name: string }> = {
 
 /** Câu hỏi lấy từ "kho" cố định của bài (mỗi câu đều có giọng cô thu sẵn), tránh lặp câu vừa hỏi. */
 function nextQuestion(lesson: Lesson, level: Level, prev?: Question): Question {
-  return randomPoolQuestion(lesson, level, prev?.prompt)
+  return forChild(randomPoolQuestion(lesson, level, prev?.prompt))
 }
 
 export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: Skill; mode: 'learn' | 'test' }) {

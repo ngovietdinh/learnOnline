@@ -2313,6 +2313,114 @@ textarea:focus {
   background: color-mix(in srgb, var(--c, var(--teal-soft)) 28%, var(--surface)) !important;
 }
 
+/* ───────── Trò chơi: bóng một màu trung tính, màn "Chạm để chơi" ───────── */
+.t-bongbay .t-body.balloon {
+  background:
+    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.9) 0 10%, rgb(255 255 255 / 0) 24%),
+    radial-gradient(circle at 40% 38%, #fffdf8, #f6eedf 55%, #e3d6c0) !important;
+  box-shadow: inset -8px -10px 18px rgba(150, 120, 80, 0.18), 0 10px 18px rgba(25, 75, 69, 0.14) !important;
+}
+.t-bongbay .t-body.balloon::after {
+  border-bottom-color: #e3d6c0 !important;
+}
+.t-bongbay .t-label {
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+.t-label .pic,
+.t-label .big-visual {
+  font-size: 2.6rem;
+}
+.game-start {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 26px 10px 30px;
+  text-align: center;
+}
+.game-start h3 {
+  margin: 0;
+  font: 800 1.8rem/1.1 var(--font-display);
+}
+.game-start-btn {
+  animation: start-pulse 1.6s ease-in-out infinite;
+}
+@keyframes start-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 8px 22px rgba(13, 148, 136, 0.25);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 12px rgba(13, 148, 136, 0.12);
+  }
+}
+.game-prompt {
+  position: relative;
+}
+.game-hear {
+  width: 44px;
+  height: 44px;
+  display: inline-grid !important;
+  place-items: center;
+  margin-right: 8px;
+  vertical-align: middle;
+  animation: start-pulse 2.2s ease-in-out infinite;
+}
+
+/* ───────── Đáp án bằng hình cho bé mầm non ───────── */
+.pic {
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  font-size: 3.4rem;
+}
+.choice .pic {
+  font-size: 5.6rem;
+}
+.layout-big .choice {
+  min-height: 150px;
+}
+.pos-grid {
+  grid-template-columns: repeat(3, 100px) !important;
+  grid-template-rows: repeat(3, 100px) !important;
+  font-size: 4.4rem !important;
+  border-radius: 22px !important;
+}
+.q-visual,
+.game-visual {
+  font-size: 1.35em;
+}
+.pic-shape svg {
+  width: 1.15em;
+  height: 1.15em;
+  fill: var(--teal);
+  stroke: var(--teal-dark);
+  stroke-width: 4;
+  filter: drop-shadow(0 6px 8px rgba(13, 148, 136, 0.25));
+}
+.pic-num {
+  gap: 6px;
+}
+.pic-num b {
+  font: 800 1em/1 var(--font-display);
+  color: var(--text);
+}
+.pic-num i {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  max-width: 1.9em;
+}
+.pic-num u {
+  width: 0.2em;
+  height: 0.2em;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
 /* ───────── Màn hình vừa: thanh bên chỉ còn biểu tượng ───────── */
 @media (max-width: 1100px) {
   .grade-grid {

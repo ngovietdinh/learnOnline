@@ -9,6 +9,7 @@ import { questionSegs, randomPoolQuestion } from '../core/script'
 import { shuffle } from '../core/rng'
 import { Critter, EmoText } from '../components/Critter'
 import { Icon } from '../components/Icon'
+import { forChild, isPictureMode } from '../core/pictures'
 
 export const GAME_META: Record<GameKind, { name: string; emoji: string; intro: string }> = {
   bongbay: { name: 'Bóng bay', emoji: '🎈', intro: 'Trò chơi bóng bay! Chạm vào quả bóng có đáp án đúng nào!' },
@@ -17,19 +18,20 @@ export const GAME_META: Record<GameKind, { name: string; emoji: string; intro: s
   latthe: { name: 'Lật thẻ', emoji: '🃏', intro: 'Trò chơi lật thẻ! Tìm hai thẻ giống nhau nhé!' },
 }
 
-/** Sắc màu tươi cho bóng bay, cá: đỏ, xanh dương, vàng, xanh lá, tím, cam. */
-const BRIGHT = [352, 205, 45, 140, 275, 22]
-/** Các bạn dưới nước cho trò câu cá. */
-const SEA = ['cavoi', 'bachtuoc', 'haicau', 'rua'] as const
+/** Bạn thú đại diện mỗi trò. Bóng bay, cá, chuột cùng một màu trung tính để không lẫn với màu của
+ *  đáp án (bé đang học màu mà bóng lại khác màu vật bên trong thì rất dễ loạn màu). */
+export const GAME_PLUSH = { bongbay: 'heo', cauca: 'haicau', chuotchui: 'hamster', latthe: 'cao' } as const
 
-/** Câu hỏi hợp để chơi: lựa chọn ngắn (hoặc là hình). */
+/** Câu hỏi hợp để chơi: lựa chọn ngắn (hoặc là hình). Bé mầm non: mọi lựa chọn phải là hình. */
 function playable(q: Question) {
-  return q.choices.length >= 2 && q.choices.every((c) => c.visual || (c.label.length > 0 && c.label.length <= 16))
+  if (q.choices.length < 2) return false
+  if (isPictureMode()) return q.choices.every((c) => c.visual)
+  return q.choices.every((c) => c.visual || (c.label.length > 0 && c.label.length <= 16))
 }
 
 export function gameQuestion(lesson: Lesson, level: Level, avoid?: string): Question | null {
-  for (let i = 0; i < 12; i++) {
-    const q = randomPoolQuestion(lesson, level, avoid)
+  for (let i = 0; i < 16; i++) {
+    const q = forChild(randomPoolQuestion(lesson, level, avoid))
     if (playable(q)) return q
   }
   return null
@@ -53,11 +55,30 @@ export function GameRound({
   rounds?: number
   onDone: (stars: number) => void
 }) {
+  const [started, setStarted] = useState(false)
   useEffect(() => {
     setMusicTrack('choi')
-    speak(GAME_META[kind].intro)
     return () => setMusicTrack('hoc')
   }, [kind])
+  // Màn "Chạm để chơi": cái chạm của bé mở khoá âm thanh trên điện thoại, cô đọc giới thiệu
+  // rồi đọc ngay câu hỏi đầu tiên (câu hỏi xếp hàng sau lời giới thiệu, không bị cắt).
+  if (!started)
+    return (
+      <div className="game-start">
+        <Critter kind={GAME_PLUSH[kind]} size={170} className="hop" />
+        <h3>{GAME_META[kind].name}</h3>
+        <button
+          className="primary-btn btn-big game-start-btn"
+          onClick={() => {
+            sfx.pop()
+            speak(GAME_META[kind].intro, { force: true })
+            setStarted(true)
+          }}
+        >
+          <Icon name="play" size={22} /> Chạm để chơi
+        </button>
+      </div>
+    )
   if (kind === 'latthe') return <Memory pairs={lesson.pairs ?? []} onDone={onDone} />
   return <TargetGame lesson={lesson} kind={kind} level={level} rounds={rounds} onDone={onDone} />
 }
@@ -67,7 +88,7 @@ function Finish({ stars, of, onDone }: { stars: number; of: number; onDone: () =
     sfx.celebrate()
     fx.confettiRain(120)
     setTimeout(() => fx.fireworks(4, sfx.firework), 400)
-    speak('Hoan hô! Con đã thắng màn chơi!')
+    speak('Hoan hô! Con đã thắng màn chơi!', { force: true })
   }, [])
   const n = Math.max(1, Math.round((stars / of) * 3))
   return (
@@ -102,7 +123,7 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
   const layout = useMemo(() => shuffle(Math.random, [0, 1, 2, 3, 4, 5]), [q])
 
   useEffect(() => {
-    if (q) speak(questionSegs(q), { queue: true })
+    if (q) speak(questionSegs(q), { queue: true, force: true })
   }, [q])
 
   if (finished) return <Finish stars={stars} of={rounds} onDone={() => onDone(stars)} />
@@ -119,7 +140,7 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
       fx.burst(x, y, { count: 40, power: 1.3 })
       fx.floatText(x, y - 30, missed ? '👍' : '+1 ⭐')
       if (!missed) setStars((s) => s + 1)
-      speak(praise())
+      speak(praise(), { force: true })
       setTimeout(() => {
         if (round + 1 >= rounds) setFinished(true)
         else {
@@ -135,7 +156,7 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
       fx.puff(x, y)
       setGone([...gone, i])
       setMissed(true)
-      speak('Thử lại nhé!')
+      speak('Thử lại nhé!', { force: true })
     }
   }
 
@@ -153,6 +174,9 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
         <span className="game-stars">⭐ {stars}</span>
       </div>
       <div className="game-prompt" key={q.prompt}>
+        <button className="speak-btn game-hear" onClick={() => speak(questionSegs(q), { force: true })} aria-label="Nghe lại câu hỏi">
+          <Icon name="sound" size={20} />
+        </button>
         {q.prompt}
         {q.visual && <div className="game-visual">{q.visual}</div>}
       </div>
@@ -162,11 +186,11 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
           <button
             key={`${q.prompt}-${i}`}
             className={`target t-${kind} ${gone.includes(i) ? 'gone' : ''} ${hit === i ? 'hit' : ''}`}
-            style={{ ['--slot' as string]: layout[i], ['--col' as string]: layout[i] % 3, ['--row' as string]: Math.floor(layout[i] / 3), ['--d' as string]: `${(i * 0.7 + layout[i] * 0.3).toFixed(2)}s`, ['--hue' as string]: BRIGHT[layout[i] % BRIGHT.length] }}
+            style={{ ['--slot' as string]: layout[i], ['--col' as string]: layout[i] % 3, ['--row' as string]: Math.floor(layout[i] / 3), ['--d' as string]: `${(i * 0.7 + layout[i] * 0.3).toFixed(2)}s` }}
             onClick={(e) => tap(i, e.currentTarget)}
             aria-label={c.label || 'lựa chọn'}
           >
-            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body"><Critter kind={kind === 'cauca' ? SEA[layout[i] % SEA.length] : 'hamster'} size={kind === 'cauca' ? '1.35em' : '1.6em'} /></span>}
+            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body"><Critter kind={GAME_PLUSH[kind]} size={kind === 'cauca' ? '1.35em' : '1.6em'} /></span>}
             <span className="t-label">{c.visual ?? c.label}</span>
             {kind === 'bongbay' && <span className="t-string" />}
           </button>

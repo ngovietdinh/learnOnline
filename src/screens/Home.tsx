@@ -7,14 +7,13 @@ import { go } from '../core/router'
 import { LESSON_BY_ID } from '../lessons/registry'
 import { useSay, useStage } from '../components/ui'
 import { Teacher } from '../components/Teacher'
-import { GAME_META } from '../games/Games'
+import { GAME_META, GAME_PLUSH } from '../games/Games'
 import type { GameKind } from '../lessons/types'
 import { sfx } from '../core/sound'
-import { Critter, avatarKind, type CritterKind } from '../components/Critter'
+import { Critter, avatarKind } from '../components/Critter'
 import { Icon } from '../components/Icon'
 import { LessonCard, QuickCard, TONES } from '../components/Cards'
 
-const GAME_PLUSH: Record<GameKind, CritterKind> = { bongbay: 'heo', cauca: 'cavoi', chuotchui: 'hamster', latthe: 'cao' }
 const GAME_SUB: Record<GameKind, string> = {
   bongbay: 'Chạm quả bóng có đáp án đúng',
   cauca: 'Câu bạn nhỏ mang đáp án đúng',

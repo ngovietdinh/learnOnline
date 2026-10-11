@@ -11,6 +11,7 @@ import { go } from '../core/router'
 import { REVIEW_INTERVALS } from '../core/mastery'
 import { Teacher } from '../components/Teacher'
 import { Icon } from '../components/Icon'
+import { forChild } from '../core/pictures'
 
 interface Item {
   skillId: string
@@ -32,7 +33,7 @@ export function ReviewScreen() {
       const lesson = LESSON_BY_ID[sk.lessonId!]
       const max = stage.maxLevel
       const levels: Level[] = [Math.max(1, max - 2) as Level, Math.max(1, max - 1) as Level, max]
-      for (const l of levels) out.push({ skillId: sk.id, title: sk.title, q: poolQuestion(lesson, l, 1 + Math.floor(Math.random() * POOL)) })
+      for (const l of levels) out.push({ skillId: sk.id, title: sk.title, q: forChild(poolQuestion(lesson, l, 1 + Math.floor(Math.random() * POOL))) })
     }
     // Xen kẽ các bài (interleaving) — buộc não phân biệt "bài này dùng cách nào".
     return out.map((it, i) => ({ it, k: (i % 3) * 100 + i })).sort((a, b) => a.k - b.k).map((x) => x.it)

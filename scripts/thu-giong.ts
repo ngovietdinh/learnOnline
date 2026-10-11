@@ -20,6 +20,7 @@ import {
   wrongSegs,
 } from '../src/core/script'
 import type { Level } from '../src/core/stages'
+import { pictureize } from '../src/core/pictures'
 
 type Line = { key: string; text: string; lang: 'vi' | 'en'; style: VoiceStyle }
 const lines = new Map<string, Line>()
@@ -63,6 +64,7 @@ for (const l of LESSONS) {
       for (let k = 1; k <= POOL; k++) {
         const q = poolQuestion(l, lv, k)
         add(questionSegs(q), style)
+        if (style === 'be') add(questionSegs(pictureize(q)), style) // bé mầm non: đáp án bằng hình
         add(correctSegs(q, ''), style)
         for (const c of q.choices) add(wrongSegs(q, c, '', style === 'be'), style)
       }

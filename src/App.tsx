@@ -21,6 +21,7 @@ import { Critter, avatarKind } from './components/Critter'
 import { Icon, type IconName } from './components/Icon'
 import { CoursesScreen } from './screens/Courses'
 import { ProgressScreen } from './screens/Progress'
+import { setPictureMode } from './core/pictures'
 
 export default function App() {
   const route = useRoute()
@@ -55,6 +56,8 @@ export default function App() {
   // Đặt ngay khi vẽ (không chờ effect) để nền chuyển động đọc đúng màu của giai đoạn.
   const theme = !me ? 'neutral' : stage.id
   document.documentElement.dataset.stage = theme
+  // Bé mầm non chưa biết chữ: đáp án bằng hình
+  setPictureMode(!!me && (stage.id === 'mam' || stage.id === 'choi'))
   document.documentElement.style.setProperty('--touch', `${stage.touchTarget}px`)
 
   // Mỗi lần chuyển màn hình: tiếng "vút" nhẹ và đổi bản nhạc nền cho hợp.

@@ -4307,55 +4307,38 @@ input[type='range'] {
   background: linear-gradient(120deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #ff5d8f));
 }
 
-/* ───────── Thú bông ───────── */
+/* ───────── Thú bông 3D ───────── */
 .critter {
-  overflow: visible;
-  flex: none;
-}
-.critter.inline {
+  position: relative;
   display: inline-block;
-  vertical-align: -0.3em;
-  margin: -0.08em 0;
-}
-.critter {
-  transform-origin: 50% 96%;
+  flex: none;
+  transform-origin: 50% 92%;
   animation: crit-breathe 3.4s ease-in-out infinite;
   animation-delay: calc(var(--cd) * -1);
+  user-select: none;
 }
-.critter .c-eyes {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: crit-blink 5.2s infinite;
-  animation-delay: calc(var(--cd) * -2);
+.critter.inline {
+  vertical-align: -0.38em;
+  margin: -0.12em 0;
 }
-.critter .c-ear-l,
-.critter .c-ear-r {
-  transform-box: fill-box;
-  transform-origin: 50% 90%;
+.critter img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
-.critter .c-ear-l {
-  animation: crit-ear-l 4.4s ease-in-out infinite;
-  animation-delay: calc(var(--cd) * -1.4);
+.critter .c-closed {
+  opacity: 0;
+  animation: crit-blink 5.2s steps(1, end) infinite;
+  animation-delay: calc(var(--cd) * -2.3);
 }
-.critter .c-ear-r {
-  animation: crit-ear-r 4.4s ease-in-out infinite;
-  animation-delay: calc(var(--cd) * -1.4);
+.critter.mood-happy .c-closed {
+  animation: none;
+  opacity: 1;
 }
-.critter .c-tail {
-  transform-box: fill-box;
-  transform-origin: 0% 100%;
-  animation: crit-wag 1.6s ease-in-out infinite;
-}
-.critter .c-spout {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: crit-spout 2.2s ease-in-out infinite;
-}
-.critter.still,
-.critter.still .c-eyes,
-.critter.still .c-ear-l,
-.critter.still .c-ear-r,
-.critter.still .c-tail {
+.critter.still {
   animation: none;
 }
 button:hover .critter,
@@ -4370,63 +4353,21 @@ button:active .critter,
     transform: scale(1, 1);
   }
   50% {
-    transform: scale(1.035, 0.965);
+    transform: scale(1.03, 0.97);
   }
 }
 @keyframes crit-blink {
   0%,
-  93%,
-  100% {
-    transform: scaleY(1);
+  94% {
+    opacity: 0;
   }
-  95.5% {
-    transform: scaleY(0.08);
-  }
-}
-@keyframes crit-ear-l {
-  0%,
-  70%,
-  100% {
-    transform: rotate(0);
-  }
-  78% {
-    transform: rotate(-9deg);
-  }
-  86% {
-    transform: rotate(4deg);
-  }
-}
-@keyframes crit-ear-r {
-  0%,
-  40%,
-  100% {
-    transform: rotate(0);
-  }
-  48% {
-    transform: rotate(9deg);
-  }
-  56% {
-    transform: rotate(-4deg);
-  }
-}
-@keyframes crit-wag {
-  0%,
-  100% {
-    transform: rotate(-6deg);
-  }
-  50% {
-    transform: rotate(8deg);
-  }
-}
-@keyframes crit-spout {
-  0%,
-  100% {
-    transform: scaleY(0.85);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scaleY(1.15);
+  95%,
+  97% {
     opacity: 1;
+  }
+  98%,
+  100% {
+    opacity: 0;
   }
 }
 @keyframes crit-hop {
@@ -4437,7 +4378,7 @@ button:active .critter,
     transform: translateY(0) scale(1.1, 0.88);
   }
   55% {
-    transform: translateY(-16px) scale(0.94, 1.08);
+    transform: translateY(-14%) scale(0.94, 1.08);
   }
   80% {
     transform: translateY(0) scale(1.06, 0.94);
@@ -4448,11 +4389,7 @@ button:active .critter,
 }
 @media (prefers-reduced-motion: reduce) {
   .critter,
-  .critter .c-eyes,
-  .critter .c-ear-l,
-  .critter .c-ear-r,
-  .critter .c-tail,
-  .critter .c-spout {
+  .critter .c-closed {
     animation: none !important;
   }
 }

@@ -6,6 +6,7 @@ import { sfx } from '../core/sound'
 import { centerOf, fx } from '../core/fx'
 import { fmt, readNumber } from '../core/vnNumber'
 import type { Explore } from './kit'
+import { EmoText } from '../components/Critter'
 
 const W = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín', 'mười']
 const celebrate = (el?: Element | null) => {
@@ -459,7 +460,7 @@ export function moneyExplore(intro: string, items: { name: string; emoji: string
     return (
       <div className="money-explore">
         <div className="shop-item">
-          <span className="hook-emoji">{it.emoji}</span>
+          <span className="hook-emoji"><EmoText text={it.emoji} /></span>
           <div>
             <b>{it.name}</b>
             <div className="price-tag">{fmt(it.price)} đồng</div>

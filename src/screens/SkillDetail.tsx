@@ -5,6 +5,7 @@ import { missingPrereqs, skillState } from '../core/progress'
 import { go } from '../core/router'
 import { LESSON_BY_ID } from '../lessons/registry'
 import { ProgressRing, useStage } from '../components/ui'
+import { EmoText } from '../components/Critter'
 
 export function SkillDetail({ id }: { id: string }) {
   const skill = SKILL_BY_ID[id]
@@ -24,7 +25,7 @@ export function SkillDetail({ id }: { id: string }) {
         ← Quay lại
       </button>
       <header className="sd-head" style={{ ['--subj' as string]: subj.color }}>
-        <span className="sd-icon">{lesson?.emoji ?? subj.icon}</span>
+        <span className="sd-icon"><EmoText text={lesson?.emoji ?? subj.icon} /></span>
         <div>
           <small>
             {subj.name} · {STAGE_BY_ID[skill.stage].name} · {skill.grade}

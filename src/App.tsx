@@ -17,6 +17,7 @@ import { SkillDetail } from './screens/SkillDetail'
 import { ParentScreen } from './screens/Parent'
 import { PlayScreen } from './screens/Play'
 import type { GameKind } from './lessons/types'
+import { EmoText } from './components/Critter'
 
 export default function App() {
   const route = useRoute()
@@ -164,7 +165,7 @@ function TopBar() {
         </button>
         {me && (
           <button className="tb-avatar" onClick={() => go({ name: 'profiles' })} title="Đổi người học">
-            <span>{me.avatar}</span>
+            <span><EmoText text={me.avatar} /></span>
             <b>{me.name}</b>
           </button>
         )}

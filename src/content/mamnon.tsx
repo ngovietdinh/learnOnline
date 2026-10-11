@@ -12,6 +12,7 @@ import { choicesFrom, near } from '../lessons/helpers'
 import { defineLesson, type Defined } from './define'
 import { cardsExplore, patternExplore, sortExplore, stepsExplore, type Card } from './kit'
 import { bank, byLevel, countGen, numberWord, vocab, type Gen } from './questions'
+import { EmoText } from '../components/Critter'
 
 const NT = { stage: 'mam' as const, grade: 0 }
 const MG = { stage: 'choi' as const, grade: 0 }
@@ -992,7 +993,7 @@ function letterLesson(id: string, group: LetterInfo[], idx: number, prev?: strin
     return {
       level,
       prompt: `Từ "${t.word}" có chữ nào?`,
-      visual: <span className="hook-emoji">{t.emoji}</span>,
+      visual: <span className="hook-emoji"><EmoText text={t.emoji} /></span>,
       layout: 'big',
       choices: opts.map((o) => ({ label: o.l, visual: <span className="letter-visual">{o.l}</span>, correct: o.l === t.l, why: o.l === t.l ? undefined : `Chữ ${o.call} không có trong từ ${t.word}.`, misconception: o.l === t.l ? undefined : 'nham-chu-cai' })),
       explain: `${t.word}: có chữ ${t.call}.`,

@@ -6,6 +6,7 @@ import { int, pick, shuffle, type Rng } from '../core/rng'
 import type { Seg } from '../core/speech'
 import type { Card } from './kit'
 import { choicesFrom, near } from '../lessons/helpers'
+import { Emo, EmoText } from '../components/Critter'
 
 export type Gen = (level: Level, rng: Rng) => Question
 
@@ -76,7 +77,7 @@ export function vocab(cards: Card[], o: VocabOpts = {}): Gen {
       return {
         level,
         prompt: o.en ? 'Hình này tiếng Anh là gì?' : 'Đây là gì?',
-        visual: <span className="hook-emoji">{target.emoji}</span>,
+        visual: <span className="hook-emoji"><EmoText text={target.emoji} /></span>,
         choices: set.map((c) => ({
           label: o.en ? o.en(c) : c.name,
           correct: c.key === target.key,
@@ -95,7 +96,7 @@ export function vocab(cards: Card[], o: VocabOpts = {}): Gen {
         label: c.name,
         visual: (
           <span className="big-visual" style={{ ['--c' as string]: c.color ?? '#ffd6e7' }}>
-            {c.emoji}
+            <Emo e={c.emoji} />
           </span>
         ),
         correct: c.key === target.key,

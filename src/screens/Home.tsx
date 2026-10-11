@@ -10,6 +10,7 @@ import { Teacher } from '../components/Teacher'
 import { GAME_META } from '../games/Games'
 import type { GameKind } from '../lessons/types'
 import { sfx } from '../core/sound'
+import { EmoText } from '../components/Critter'
 
 const STATE_BADGE: Record<SkillState, string> = {
   mastered: '🏆 Đã vững',
@@ -35,7 +36,7 @@ export function SkillNode({ skill, progress, big, index = 0 }: { skill: Skill; p
         else go({ name: 'skill', id: skill.id })
       }}
     >
-      <span className="node-icon">{lesson?.emoji ?? subj.icon}</span>
+      <span className="node-icon"><EmoText text={lesson?.emoji ?? subj.icon} still /></span>
       <span className="node-text">
         <b>{skill.title}</b>
         <small>
@@ -121,7 +122,7 @@ export function HomeScreen() {
               go({ name: 'lesson', id: nextLesson.id, mode: 'learn' })
             }}
           >
-            <span className="next-emoji">{nextLesson.emoji}</span>
+            <span className="next-emoji"><EmoText text={nextLesson.emoji} /></span>
             <span className="next-text">
               <small>{progress[next.id] ? 'Học tiếp' : young ? 'Bài tiếp theo của con' : 'Bài tiếp theo dành cho em'}</small>
               <b>{next.title}</b>
@@ -149,7 +150,7 @@ export function HomeScreen() {
         <div className="play-grid">
           {(Object.keys(GAME_META) as GameKind[]).map((k, i) => (
             <button key={k} className={`play-card pk-${k}`} style={{ ['--i' as string]: i }} onClick={() => go({ name: 'play', kind: k, view })}>
-              <span className="play-emoji">{GAME_META[k].emoji}</span>
+              <span className="play-emoji"><EmoText text={GAME_META[k].emoji} /></span>
               <b>{GAME_META[k].name}</b>
             </button>
           ))}
@@ -161,7 +162,7 @@ export function HomeScreen() {
           const sum = viewProgress(v.id, progress)
           return (
             <button key={v.id} className={`stage-tab v-${v.id} ${view === v.id ? 'on' : ''}`} onClick={() => setView(v.id)}>
-              <span>{v.icon}</span>
+              <span><EmoText text={v.icon} still /></span>
               <b>{v.name}</b>
               <small>
                 {sum.mastered}/{sum.total} vững

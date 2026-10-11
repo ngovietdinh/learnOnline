@@ -4,6 +4,7 @@ import { FOCUS_STAGES, gradeForAge, MAX_AGE, STAGES, stageForAge } from '../core
 import { Teacher } from '../components/Teacher'
 import { go } from '../core/router'
 import { sfx } from '../core/sound'
+import { EmoText } from '../components/Critter'
 
 const AVATARS = ['🐼', '🦊', '🐯', '🐨', '🐸', '🦄', '🐙', '🦁', '🐰', '🐧', '🐳', '🦉']
 
@@ -35,7 +36,7 @@ export function ProfilesScreen() {
                     go({ name: 'home' })
                   }}
                 >
-                  <span className="profile-avatar">{p.avatar}</span>
+                  <span className="profile-avatar"><EmoText text={p.avatar} /></span>
                   <b>{p.name}</b>
                   <small>
                     {p.age} tuổi · {st.id === 'tieuhoc' ? `Lớp ${p.grade ?? gradeForAge(p.age)}` : st.grades}
@@ -102,7 +103,7 @@ function CreateProfile({ onDone, canCancel }: { onDone: () => void; canCancel: b
         </div>
       )}
       <div className={`stage-preview s-${st.id}`}>
-        <span>{st.mascot}</span>
+        <span><EmoText text={st.mascot} /></span>
         <div>
           <b>
             Giai đoạn {st.name} ({st.grades})
@@ -117,7 +118,7 @@ function CreateProfile({ onDone, canCancel }: { onDone: () => void; canCancel: b
       <div className="avatar-pick" role="radiogroup" aria-label="Chọn hình đại diện">
         {AVATARS.map((a) => (
           <button type="button" key={a} role="radio" aria-checked={a === avatar} className={a === avatar ? 'on' : ''} onClick={() => setAvatar(a)}>
-            {a}
+            <EmoText text={a} />
           </button>
         ))}
       </div>
@@ -140,7 +141,7 @@ function StagesStrip() {
     <div className="stages-strip">
       {STAGES.filter((s) => FOCUS_STAGES.includes(s.id)).map((s) => (
         <div key={s.id} className={`stage-pill s-${s.id}`}>
-          <span>{s.mascot}</span>
+          <span><EmoText text={s.mascot} /></span>
           <b>{s.name}</b>
           <small>
             {s.ages[0]}–{s.ages[1]} tuổi

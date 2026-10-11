@@ -19,6 +19,7 @@ import type { GameKind } from '../lessons/types'
 import type { Seg } from '../core/speech'
 import { centerOf, fx } from '../core/fx'
 import { praise } from '../core/speech'
+import { EmoText } from '../components/Critter'
 
 type Step = 'hook' | 'explore' | 'essence' | 'game' | 'practice' | 'teach' | 'remember'
 
@@ -191,7 +192,7 @@ export function LessonPlayer({ lesson, skill, mode }: { lesson: Lesson; skill: S
           ✕
         </button>
         <div className="player-title">
-          <span className="player-emoji">{lesson.emoji}</span>
+          <span className="player-emoji"><EmoText text={lesson.emoji} /></span>
           <div>
             <h2>{lesson.title}</h2>
             <small>
@@ -448,7 +449,7 @@ function TeachBackStep({
                 say(o.feedback)
               }}
             >
-              <span className="who">{o.who}</span>
+              <span className="who"><EmoText text={o.who} /></span>
               <span className="says">“{o.text}”</span>
               {was && <span className="teach-fb">{o.feedback}</span>}
             </button>

@@ -4,6 +4,7 @@ import type { ExploreProps } from '../lessons/types'
 import type { Seg } from '../core/speech'
 import { sfx } from '../core/sound'
 import { centerOf, fx } from '../core/fx'
+import { EmoText } from '../components/Critter'
 
 export interface Card {
   key: string
@@ -57,7 +58,7 @@ export function cardsExplore(intro: string, cards: Card[], done: string, opts: {
               }
             }}
           >
-            <span className="tap-emoji">{c.emoji}</span>
+            <span className="tap-emoji"><EmoText text={c.emoji} /></span>
             <span className="tap-name">{c.name}</span>
             {c.sub && <span className="tap-sub">{c.sub}</span>}
           </button>
@@ -122,7 +123,7 @@ export function sortExplore(intro: string, bins: { name: string; emoji: string }
                 say(it.name)
               }}
             >
-              <span>{it.emoji}</span>
+              <span><EmoText text={it.emoji} /></span>
               <small>{it.name}</small>
             </button>
           ))}
@@ -132,7 +133,7 @@ export function sortExplore(intro: string, bins: { name: string; emoji: string }
           {bins.map((b, i) => (
             <button key={b.name} className={`sort-bin ${pick ? 'ready' : ''}`} onClick={(e) => drop(i, e.currentTarget)}>
               <span className="bin-head">
-                {b.emoji} {b.name}
+                <EmoText text={b.emoji} /> {b.name}
               </span>
               <span className="bin-items">
                 {items
@@ -190,7 +191,7 @@ export function stepsExplore(intro: string, steps: Step[], done: string, opts: {
         <div className={`steps-ring ${opts.cycle ? 'cycle' : 'line'}`} style={{ ['--n' as string]: n }}>
           {steps.map((s, k) => (
             <div key={k} className={`step-node ${k <= i ? 'on' : ''} ${k === i ? 'now' : ''}`} style={{ ['--k' as string]: k }}>
-              <span className="sn-emoji">{s.emoji}</span>
+              <span className="sn-emoji"><EmoText text={s.emoji} /></span>
               <small>{s.title}</small>
             </div>
           ))}

@@ -4,6 +4,7 @@ import type { Skill, StandardRef, SubjectId } from '../core/curriculum'
 import type { StageId } from '../core/stages'
 import type { Explore } from './kit'
 import type { Gen } from './questions'
+import { EmoText } from '../components/Critter'
 
 export interface LessonDef {
   id: string
@@ -34,7 +35,7 @@ export interface Defined {
   skill: Skill
 }
 
-const hookNode = (v?: string): ReactNode => (v ? <span className="hook-emoji">{v}</span> : undefined)
+const hookNode = (v?: string): ReactNode => (v ? <span className="hook-emoji"><EmoText text={v} /></span> : undefined)
 
 export function defineLesson(d: LessonDef): Defined {
   const skillId = `${d.stage}.${d.id}`

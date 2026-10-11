@@ -7,6 +7,7 @@ import { centerOf, fx } from '../core/fx'
 import { praise, speak } from '../core/speech'
 import { questionSegs, randomPoolQuestion } from '../core/script'
 import { shuffle } from '../core/rng'
+import { Critter, EmoText } from '../components/Critter'
 
 export const GAME_META: Record<GameKind, { name: string; emoji: string; intro: string }> = {
   bongbay: { name: 'Bóng bay', emoji: '🎈', intro: 'Trò chơi bóng bay! Chạm vào quả bóng có đáp án đúng nào!' },
@@ -139,7 +140,7 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
     <div className={`game game-${kind}`}>
       <div className="game-head">
         <span className="game-badge">
-          {GAME_META[kind].emoji} {GAME_META[kind].name}
+          <EmoText text={GAME_META[kind].emoji} still /> {GAME_META[kind].name}
         </span>
         <div className="game-progress">
           {Array.from({ length: rounds }, (_, i) => (
@@ -162,7 +163,7 @@ function TargetGame({ lesson, kind, level, rounds, onDone }: { lesson: Lesson; k
             onClick={(e) => tap(i, e.currentTarget)}
             aria-label={c.label || 'lựa chọn'}
           >
-            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body">{kind === 'cauca' ? '🐟' : '🐹'}</span>}
+            {kind === 'bongbay' ? <span className="t-body balloon" aria-hidden /> : <span className="t-body"><Critter kind={kind === 'cauca' ? 'ca' : 'hamster'} size="1.3em" /></span>}
             <span className="t-label">{c.visual ?? c.label}</span>
             {kind === 'bongbay' && <span className="t-string" />}
           </button>
@@ -236,7 +237,7 @@ function Memory({ pairs, onDone }: { pairs: [string, string][]; onDone: (s: numb
             >
               <span className="mem-inner">
                 <span className="mem-back">❓</span>
-                <span className="mem-front">{c.face}</span>
+                <span className="mem-front"><EmoText text={c.face} /></span>
               </span>
             </button>
           )

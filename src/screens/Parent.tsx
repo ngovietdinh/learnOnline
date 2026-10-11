@@ -6,6 +6,7 @@ import { dueReviews, recommend } from '../core/progress'
 import { misconceptionLabel } from '../core/misconceptions'
 import { go } from '../core/router'
 import { ProgressRing } from '../components/ui'
+import { EmoText } from '../components/Critter'
 
 const EMPTY: Record<string, SkillProgress> = {}
 
@@ -116,7 +117,7 @@ function LearnerReport({ profile }: { profile: Profile }) {
   return (
     <section className="panel report">
       <header className="report-head">
-        <span className="profile-avatar">{profile.avatar}</span>
+        <span className="profile-avatar"><EmoText text={profile.avatar} /></span>
         <div>
           <h3>{profile.name}</h3>
           <small>

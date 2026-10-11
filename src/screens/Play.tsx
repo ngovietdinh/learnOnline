@@ -8,6 +8,7 @@ import { go } from '../core/router'
 import { useStage } from '../components/ui'
 import { Teacher } from '../components/Teacher'
 import type { Level } from '../core/stages'
+import { EmoText } from '../components/Critter'
 
 /** Sân chơi: chơi bằng câu hỏi của các bài trong lớp đang xem — ưu tiên bài em đã học. */
 export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
@@ -34,7 +35,7 @@ export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
           ✕
         </button>
         <div className="player-title">
-          <span className="player-emoji">{GAME_META[kind].emoji}</span>
+          <span className="player-emoji"><EmoText text={GAME_META[kind].emoji} /></span>
           <div>
             <h2>{GAME_META[kind].name}</h2>
             <small>
@@ -46,7 +47,7 @@ export function PlayScreen({ kind, view }: { kind: GameKind; view?: string }) {
       <div className="game-kinds">
         {(Object.keys(GAME_META) as GameKind[]).map((k) => (
           <button key={k} className={`chip ${k === kind ? 'now' : ''}`} onClick={() => go({ name: 'play', kind: k, view: v })}>
-            {GAME_META[k].emoji} {GAME_META[k].name}
+            <EmoText text={GAME_META[k].emoji} still /> {GAME_META[k].name}
           </button>
         ))}
       </div>

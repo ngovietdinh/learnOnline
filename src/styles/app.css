@@ -3248,8 +3248,27 @@ input[type='range'] {
 }
 .t-cauca .t-body {
   font-size: 5rem;
-  transform: scaleX(-1);
-  filter: hue-rotate(calc(var(--hue) * 1deg));
+  filter: hue-rotate(calc((var(--hue) - 30) * 1deg));
+}
+/* Nhãn đáp án dạng viên thuốc trắng dưới bạn thú — dễ đọc trên nền lông. */
+.t-cauca .t-label,
+.t-chuotchui .t-label {
+  position: static;
+  order: 2;
+  margin-top: -6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.94);
+  color: #3b2a4a;
+  text-shadow: none;
+  box-shadow: 0 3px 10px rgb(40 20 60 / 0.18);
+  white-space: nowrap;
+  max-width: none;
+  font-size: 1.1rem;
+}
+.t-cauca,
+.t-chuotchui {
+  grid-auto-flow: row;
 }
 @keyframes fish-swim {
   0% {
@@ -3293,12 +3312,6 @@ input[type='range'] {
   translate: -50% 0;
   animation: mole-pop 3.2s ease-in-out infinite;
   animation-delay: calc(var(--d) * -1);
-}
-.t-chuotchui .t-label {
-  top: -26px;
-  color: #3f2a14;
-  text-shadow: 0 0 4px #fff, 0 0 8px #fff;
-  font-size: 1.3rem;
 }
 @keyframes mole-pop {
   0%,
@@ -4292,4 +4305,154 @@ input[type='range'] {
 }
 .next-card {
   background: linear-gradient(120deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #ff5d8f));
+}
+
+/* ───────── Thú bông ───────── */
+.critter {
+  overflow: visible;
+  flex: none;
+}
+.critter.inline {
+  display: inline-block;
+  vertical-align: -0.3em;
+  margin: -0.08em 0;
+}
+.critter {
+  transform-origin: 50% 96%;
+  animation: crit-breathe 3.4s ease-in-out infinite;
+  animation-delay: calc(var(--cd) * -1);
+}
+.critter .c-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: crit-blink 5.2s infinite;
+  animation-delay: calc(var(--cd) * -2);
+}
+.critter .c-ear-l,
+.critter .c-ear-r {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+}
+.critter .c-ear-l {
+  animation: crit-ear-l 4.4s ease-in-out infinite;
+  animation-delay: calc(var(--cd) * -1.4);
+}
+.critter .c-ear-r {
+  animation: crit-ear-r 4.4s ease-in-out infinite;
+  animation-delay: calc(var(--cd) * -1.4);
+}
+.critter .c-tail {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: crit-wag 1.6s ease-in-out infinite;
+}
+.critter .c-spout {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: crit-spout 2.2s ease-in-out infinite;
+}
+.critter.still,
+.critter.still .c-eyes,
+.critter.still .c-ear-l,
+.critter.still .c-ear-r,
+.critter.still .c-tail {
+  animation: none;
+}
+button:hover .critter,
+button:active .critter,
+.critter.hop,
+.critter:hover {
+  animation: crit-hop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes crit-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.035, 0.965);
+  }
+}
+@keyframes crit-blink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  95.5% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes crit-ear-l {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  78% {
+    transform: rotate(-9deg);
+  }
+  86% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes crit-ear-r {
+  0%,
+  40%,
+  100% {
+    transform: rotate(0);
+  }
+  48% {
+    transform: rotate(9deg);
+  }
+  56% {
+    transform: rotate(-4deg);
+  }
+}
+@keyframes crit-wag {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes crit-spout {
+  0%,
+  100% {
+    transform: scaleY(0.85);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleY(1.15);
+    opacity: 1;
+  }
+}
+@keyframes crit-hop {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  25% {
+    transform: translateY(0) scale(1.1, 0.88);
+  }
+  55% {
+    transform: translateY(-16px) scale(0.94, 1.08);
+  }
+  80% {
+    transform: translateY(0) scale(1.06, 0.94);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .critter,
+  .critter .c-eyes,
+  .critter .c-ear-l,
+  .critter .c-ear-r,
+  .critter .c-tail,
+  .critter .c-spout {
+    animation: none !important;
+  }
 }

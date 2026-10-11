@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { speak, type Seg } from '../core/speech'
 import { useActiveProfile, useStore } from '../core/store'
 import { stageForAge, type Stage } from '../core/stages'
+import { EmoText } from './Critter'
 
 export function useStage(): Stage {
   const p = useActiveProfile()
@@ -33,7 +34,7 @@ export function Mascot({ emoji, children, mood = 'idle' }: { emoji: string; chil
   return (
     <div className={`mascot mood-${mood}`}>
       <span className="mascot-face" aria-hidden>
-        {emoji}
+        <EmoText text={emoji} />
       </span>
       {children && <div className="bubble">{children}</div>}
     </div>

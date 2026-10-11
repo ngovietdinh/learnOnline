@@ -2260,6 +2260,59 @@ textarea:focus {
   }
 }
 
+/* ───────── Thẻ chạm khám phá (bé nhỏ) — tông phấn, viền màu, thú bông nổi khối ───────── */
+.tap-grid {
+  gap: 16px;
+}
+.tap-card {
+  background: color-mix(in srgb, var(--c) 26%, var(--surface)) !important;
+  border: 3px solid color-mix(in srgb, var(--c) 55%, var(--surface)) !important;
+  border-radius: 30px 30px 30px 12px !important;
+  box-shadow: var(--shadow-sm) !important;
+  padding: 10px 8px 14px;
+  gap: 4px;
+  transition: transform 0.3s var(--spring), box-shadow 0.3s;
+}
+.tap-card:hover {
+  transform: translateY(-5px) rotate(-1deg);
+  box-shadow: var(--shadow) !important;
+}
+.tap-card:active {
+  transform: scale(0.96);
+}
+.tap-card .tap-emoji {
+  font-size: 5.8rem;
+  filter: drop-shadow(0 6px 8px rgba(25, 75, 69, 0.14));
+}
+.tap-name,
+.tap-sub,
+.tap-grid.small .tap-emoji {
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+.tap-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+.tap-sub {
+  color: var(--muted) !important;
+}
+.tap-card.seen::after {
+  content: '' !important;
+  width: 26px;
+  height: 26px;
+  right: 10px;
+  top: 10px;
+  transform: none !important;
+  border-radius: 50%;
+  background: var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 15px no-repeat;
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+  animation: right-pop 0.5s var(--spring);
+}
+.big-visual {
+  background: color-mix(in srgb, var(--c, var(--teal-soft)) 28%, var(--surface)) !important;
+}
+
 /* ───────── Màn hình vừa: thanh bên chỉ còn biểu tượng ───────── */
 @media (max-width: 1100px) {
   .grade-grid {

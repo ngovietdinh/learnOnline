@@ -28,8 +28,10 @@ ASC, DESC = 1900, 500  # khung cao hơn chữ một chút để hình thú bông
 
 def png_bytes(path: str, px: int) -> bytes:
     im = Image.open(path).convert("RGBA").resize((px, px), Image.LANCZOS)
+    # bảng màu 256 màu (giữ độ trong) — nhẹ hơn ~4 lần, mắt thường gần như không phân biệt
+    q = im.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
     b = io.BytesIO()
-    im.save(b, "PNG", optimize=True)
+    q.save(b, "PNG", optimize=True)
     return b.getvalue()
 
 

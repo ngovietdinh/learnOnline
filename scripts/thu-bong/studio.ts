@@ -10,11 +10,15 @@ const SIZE = Number(q.get('size') ?? 512)
 const KIND = q.get('kind') ?? 'gau'
 const BLINK = q.get('blink') === '1'
 const BG = q.get('bg') // để xem thử: nền màu
+/** Độ dài lông mặc định (từng loài có thể đổi). */
+let FUR_LEN = 0.1
 
 // ───────────────────────── Bộ dựng hình ─────────────────────────
 
 const SPHERE = new THREE.SphereGeometry(1, 72, 54)
 const root = new THREE.Group()
+/** Nhóm đang dựng: đầu được dựng trong nhóm riêng rồi nhấc lên thân đứng. */
+let target: THREE.Object3D = root
 const v3 = (a: V) => new THREE.Vector3(...a)
 
 /** Một khối elip: tâm, bán kính 3 trục, góc xoay (radian). */
@@ -24,30 +28,44 @@ interface Ell {
   rot?: V
 }
 
-const SHELLS = 18
+const SHELLS = 30
 function furMaterials(color: string, scale: THREE.Vector3, len: number, density: number) {
   const col = new THREE.Color(color)
   const mats: THREE.Material[] = []
+  const inv = new THREE.Vector3(1 / scale.x, 1 / scale.y, 1 / scale.z)
   for (let i = 1; i <= SHELLS; i++) {
     const f = i / SHELLS
-    const m = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.7 + 0.38 * f), roughness: 1 })
-    const off = new THREE.Vector3(len / scale.x, len / scale.y, len / scale.z).multiplyScalar(f)
+    const m = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.55 + 0.55 * Math.pow(f, 0.7)), roughness: 0.92 })
     m.onBeforeCompile = (sh) => {
-      sh.uniforms.uOff = { value: off }
+      sh.uniforms.uOff = { value: inv.clone().multiplyScalar(len * f) }
+      sh.uniforms.uGrav = { value: inv.clone().multiplyScalar(len * 0.9 * f * f) }
       sh.uniforms.uScale = { value: scale }
-      sh.uniforms.uThr = { value: 0.08 + 0.86 * Math.pow(f, 0.85) }
+      sh.uniforms.uF = { value: f }
       sh.uniforms.uDen = { value: density }
       sh.vertexShader =
-        'uniform vec3 uOff; uniform vec3 uScale; varying vec3 vFurP;\n' +
-        sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vFurP = position * uScale;\n transformed += normalize(objectNormal) * uOff;')
-      sh.fragmentShader =
-        'uniform float uThr; uniform float uDen; varying vec3 vFurP;\nfloat h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }\n' +
-        sh.fragmentShader.replace(
-          '#include <clipping_planes_fragment>',
-          '#include <clipping_planes_fragment>\n if (h3(floor(vFurP * uDen)) < uThr) discard;',
+        'uniform vec3 uOff; uniform vec3 uGrav; uniform vec3 uScale; varying vec3 vFurP;\n' +
+        sh.vertexShader.replace(
+          '#include <begin_vertex>',
+          '#include <begin_vertex>\n vFurP = position * uScale;\n vec3 nn = normalize(objectNormal);\n transformed += nn * uOff;\n transformed.y -= uGrav.y * (0.35 + 0.65 * (1.0 - abs(nn.y)));',
         )
+      sh.fragmentShader =
+        'uniform float uF; uniform float uDen; varying vec3 vFurP;\nfloat h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }\n' +
+        sh.fragmentShader
+          .replace(
+            '#include <clipping_planes_fragment>',
+            `#include <clipping_planes_fragment>
+ vec3 cp = vFurP * uDen;
+ vec3 cell = floor(cp);
+ float hl = h3(cell);
+ float clump = mix(0.55, 1.0, h3(floor(cp / 7.0) + 3.1));
+ float strand = hl * clump;
+ if (strand < uF * 0.97) discard;
+ vec3 lp = fract(cp) - 0.5;
+ if (length(lp) > mix(0.62, 0.18, uF / max(strand, 0.001))) discard;`,
+          )
+          .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= mix(0.86, 1.12, h3(floor(vFurP * uDen) + 7.7));')
     }
-    m.customProgramCacheKey = () => 'long-nhung'
+    m.customProgramCacheKey = () => 'long-that'
     mats.push(m)
   }
   return mats
@@ -71,13 +89,13 @@ function fur(e: Ell, color: string, o: { len?: number; den?: number; geo?: THREE
   base.castShadow = true
   base.receiveShadow = true
   g.add(base)
-  for (const m of furMaterials(color, scale, o.len ?? 0.042, o.den ?? 110)) {
+  for (const m of furMaterials(color, scale, o.len ?? FUR_LEN, o.den ?? 100)) {
     const s = new THREE.Mesh(geo, m)
     s.receiveShadow = true
     g.add(s)
   }
   if (!o.geo) place(g, e)
-  ;(o.parent ?? root).add(g)
+  ;(o.parent ?? target).add(g)
   return g
 }
 
@@ -98,7 +116,7 @@ function solid(e: Ell, color: string, o: { gloss?: number; geo?: THREE.BufferGeo
   )
   m.castShadow = true
   if (!o.geo) place(m, e)
-  ;(o.parent ?? root).add(m)
+  ;(o.parent ?? target).add(m)
   return m
 }
 
@@ -127,7 +145,7 @@ function thread(on: Ell, dirs: V[], color = '#3a2228', radius = 0.034, out = 0.0
   const pts = dirs.map((d) => surf(on, d, out).p)
   const curve = new THREE.CatmullRomCurve3(pts)
   const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, radius, 10, false), new THREE.MeshStandardMaterial({ color, roughness: 0.7 }))
-  root.add(m)
+  target.add(m)
   return m
 }
 
@@ -138,37 +156,34 @@ function tube(points: V[], radius: number, color: string, furry = true, len = 0.
   return solid({ c: [0, 0, 0], r: [1, 1, 1] }, color, { geo })
 }
 
-/** Mắt nhựa bóng có hai đốm sáng — hoặc chỉ thêu khi nhắm. */
+/** Mắt hạt cườm đen bóng — hoặc nhắm cười (chỉ thêu cong) khi chụp khung chớp mắt. */
 function eyes(head: Ell, o: { x?: number; y?: number; size?: number; ring?: string } = {}) {
-  const x = o.x ?? 0.36
-  const y = o.y ?? 0.06
+  const x = o.x ?? 0.34
+  const y = o.y ?? 0.02
   const s = o.size ?? 1
   for (const k of [-1, 1]) {
     const dir: V = [k * x, y, 0.93]
-    if (o.ring) stick(head, dir, [0.25 * s, 0.25 * s, 0.05], o.ring, 'felt', 0.0)
+    if (o.ring) stick(head, dir, [0.2 * s, 0.2 * s, 0.05], o.ring, 'felt', 0.0)
     if (BLINK) {
-      thread(head, [[k * x - 0.12 * s, y - 0.02, 0.93], [k * x, y - 0.09 * s, 0.93], [k * x + 0.12 * s, y - 0.02, 0.93]], '#2a1a24', 0.03, 0.04)
+      thread(head, [[k * x - 0.08 * s, y - 0.01, 0.93], [k * x, y + 0.05 * s, 0.93], [k * x + 0.08 * s, y - 0.01, 0.93]], '#1d1418', 0.022, 0.06)
       continue
     }
-    const { p, n } = stick(head, dir, [0.15 * s, 0.185 * s, 0.1 * s], '#1b1220', 'gloss', 0.02)
-    // đốm sáng lớn và nhỏ
+    const { p, n } = stick(head, dir, [0.085 * s, 0.095 * s, 0.075 * s], '#0d0a0c', 'gloss', 0.045)
     const up = new THREE.Vector3(0, 1, 0)
     const side = new THREE.Vector3().crossVectors(up, n).normalize()
-    const hl = (dx: number, dy: number, r: number) => {
-      const c = p.clone().addScaledVector(n, 0.11 * s).addScaledVector(side, dx * s).addScaledVector(up, dy * s)
-      solid({ c: [c.x, c.y, c.z], r: [r * s, r * s, r * s * 0.5] }, '#ffffff', { emissive: '#ffffff' })
-    }
-    hl(-0.055, 0.075, 0.055)
-    hl(0.06, -0.07, 0.028)
+    const c = p.clone().addScaledVector(n, 0.07 * s).addScaledVector(side, -0.025 * s).addScaledVector(up, 0.035 * s)
+    solid({ c: [c.x, c.y, c.z], r: [0.018 * s, 0.018 * s, 0.008] }, '#ffffff', { emissive: '#ffffff' })
   }
 }
 
-function cheeks(head: Ell, color = '#ff9fb4', x = 0.62, y = -0.2) {
-  for (const k of [-1, 1]) stick(head, [k * x, y, 0.76], [0.17, 0.11, 0.06], color, 'fur', 0.0, 0.02)
+function cheeks(_head: Ell, _color = '', _x = 0, _y = 0) {
+  /* phong cách thật: không tô má */
 }
 
-function mouthW(on: Ell, y = -0.15, w = 0.26, color = '#3a2228') {
-  thread(on, [[-w, y + 0.07, 0.95], [-w / 2, y - 0.07, 0.95], [0, y + 0.03, 1], [w / 2, y - 0.07, 0.95], [w, y + 0.07, 0.95]], color)
+/** Nụ cười chỉ thêu mảnh. */
+function mouthW(on: Ell, y = -0.15, w = 0.26, color = '#2a1c1f') {
+  const a = w * 0.55
+  thread(on, [[-a, y + 0.05, 0.95], [-a * 0.5, y - 0.02, 0.97], [0, y - 0.04, 1], [a * 0.5, y - 0.02, 0.97], [a, y + 0.05, 0.95]], color, 0.02, 0.06)
 }
 
 // ───────────────────────── Thú bốn chân ─────────────────────────
@@ -187,21 +202,25 @@ interface Mammal {
 }
 
 const HEAD: Ell = { c: [0, 1.74, 0], r: [1.08, 0.96, 0.98] }
-const BODY: Ell = { c: [0, 0.74, -0.02], r: [0.8, 0.74, 0.7] }
+const BODY: Ell = { c: [0, 1.12, -0.02], r: [0.78, 0.92, 0.66] }
+/** Đầu dựng ở toạ độ cũ rồi nhấc lên đặt trên thân đứng. */
+const HEAD_LIFT = 0.95
 const MUZ: Ell = { c: [0, 1.46, 0.8], r: [0.4, 0.27, 0.24] }
 
 function mammal(s: Mammal) {
   const limb = s.limbs ?? s.fur
-  fur(HEAD, s.fur)
+  // thân đứng, bụng sáng màu, chân ngắn, tay buông
   fur(BODY, s.fur)
-  fur({ c: [0, 0.66, 0.38], r: [0.5, 0.5, 0.38] }, s.light, { len: 0.04 })
-  // chân
+  fur({ c: [0, 1.02, 0.34], r: [0.5, 0.66, 0.36] }, s.light)
   for (const k of [-1, 1]) {
-    fur({ c: [k * 0.42, 0.2, 0.4], r: [0.27, 0.2, 0.34] }, limb)
-    stick({ c: [k * 0.42, 0.2, 0.4], r: [0.27, 0.2, 0.34] }, [0, 0.1, 1], [0.13, 0.1, 0.04], s.inner === s.fur ? s.light : s.inner, 'felt', 0.035)
-    // tay
-    fur({ c: [k * 0.72, 0.86, 0.2], r: [0.2, 0.36, 0.21], rot: [-0.35, 0, k * 0.5] }, limb)
+    fur({ c: [k * 0.36, 0.28, 0.08], r: [0.27, 0.32, 0.29] }, limb)
+    fur({ c: [k * 0.66, 1.28, 0.3], r: [0.19, 0.48, 0.2], rot: [-0.55, 0, k * 0.32] }, limb)
   }
+  // đầu dựng trong nhóm riêng
+  const headG = new THREE.Group()
+  root.add(headG)
+  target = headG
+  fur(HEAD, s.fur)
   // tai
   const ec = s.earColor ?? s.fur
   const ear = (e: Ell, inner: Ell | null, color = ec) => {
@@ -229,7 +248,7 @@ function mammal(s: Mammal) {
         g.position.set(k * (s.ear === 'ngua' ? 0.48 : 0.58), 2.5 + tall * 0.18, -0.02)
         g.rotation.set(0, 0, -k * 0.38)
         g.scale.set(1, 1, 0.6)
-        root.add(g)
+        target.add(g)
         break
       }
       case 'tho':
@@ -264,7 +283,7 @@ function mammal(s: Mammal) {
       thread(MUZ, [[0, 0.42, 0.9], [0, -0.17, 1]])
       break
     case 'tamgiac':
-      stick(face, s.muzzle ? [0, 0.55, 0.83] : [0, -0.14, 1], [0.1, 0.07, 0.06], '#d9667f', 'gloss', 0.02)
+      stick(face, s.muzzle ? [0, 0.55, 0.83] : [0, -0.14, 1], [0.1, 0.07, 0.06], '#2b1b20', 'gloss', 0.02)
       if (s.muzzle) {
         mouthW(MUZ, -0.2, 0.24)
         thread(MUZ, [[0, 0.4, 0.9], [0, -0.17, 1]])
@@ -289,7 +308,14 @@ function mammal(s: Mammal) {
       break
     }
   }
+  s.extra?.(HEAD, { body: BODY, muzzle: MUZ })
+  target = root
+  headG.position.y = HEAD_LIFT
   // đuôi (nhìn thấy nhờ góc nghiêng 3/4)
+  const tailG = new THREE.Group()
+  root.add(tailG)
+  target = tailG
+  tailG.position.set(0, 0.3, -0.08)
   switch (s.tail) {
     case 'bom':
       fur({ c: [0.15, 0.45, -0.72], r: [0.25, 0.25, 0.25] }, s.light, { len: 0.07 })
@@ -308,7 +334,7 @@ function mammal(s: Mammal) {
       tube([[0.35, 0.4, -0.65], [0.9, 0.35, -0.55], [1.05, 0.65, -0.45], [0.85, 0.75, -0.42], [0.85, 0.55, -0.42]], 0.045, s.limbs ?? s.fur, false)
       break
   }
-  s.extra?.(HEAD, { body: BODY, muzzle: MUZ })
+  target = root
 }
 
 // ───────────────────────── Chim, ếch, cá… ─────────────────────────
@@ -451,7 +477,6 @@ const KINDS: Record<string, () => void> = {
       tail: 'none',
       extra: (h) => {
         stick(h, [0.45, 0.65, 0.6], [0.3, 0.22, 0.05], '#3d3434', 'fur', -0.01, 0.03)
-        stick(BODY, [-0.5, 0.2, 0.84], [0.22, 0.17, 0.05], '#3d3434', 'fur', -0.01, 0.03)
         for (const k of [-1, 1]) {
           const g = solid({ c: [0, 0, 0], r: [1, 1, 1] }, '#f4e3b5', { geo: new THREE.ConeGeometry(0.1, 0.36, 32) })
           g.position.set(k * 0.5, 2.62, 0)
@@ -604,6 +629,70 @@ const KINDS: Record<string, () => void> = {
   cavoi: () => fishLike('cavoi'),
   caheo: () => fishLike('caheo'),
   bachtuoc: octopus,
+  xu: yeti,
+  thach: jelly,
+}
+
+/** Bông Xù: bạn lông dài màu kem, mặt nỉ nhỏ, mắt hạt cườm. */
+function yeti() {
+  FUR_LEN = 0.16
+  const col = '#efe3cf'
+  const body: Ell = { c: [0, 1.55, 0], r: [1.0, 1.45, 0.88] }
+  fur(body, col, { den: 75 })
+  for (const k of [-1, 1]) {
+    fur({ c: [k * 0.98, 1.25, 0.12], r: [0.26, 0.62, 0.26], rot: [0, 0, k * 0.22] }, col, { den: 75 })
+    fur({ c: [k * 0.4, 0.24, 0.12], r: [0.32, 0.28, 0.32] }, col, { den: 75 })
+  }
+  const face: Ell = { c: [0, 2.08, 0.66], r: [0.56, 0.46, 0.38] }
+  solid(face, '#f4e2cd')
+  eyes(face, { x: 0.45, y: 0.08, size: 0.95 })
+  mouthW(face, -0.22, 0.34)
+}
+
+/** Thạch: bạn thạch trong veo, có bọt khí bên trong. */
+function jelly() {
+  const prof = new THREE.SplineCurve(
+    [[0.0, 0.2], [0.7, 0.24], [1.02, 0.55], [1.1, 1.05], [1.0, 1.55], [0.8, 1.98], [0.45, 2.3], [0.0, 2.38]].map(([x, y]) => new THREE.Vector2(x, y)),
+  )
+  const geo = new THREE.LatheGeometry(prof.getPoints(60), 96)
+  // Thạch trong: nhìn xuyên được nền phía sau (ảnh có độ trong suốt thật), viền và đốm sáng bóng.
+  const gel = new THREE.MeshPhysicalMaterial({
+    color: '#bfeaff',
+    roughness: 0.03,
+    transparent: true,
+    opacity: 0.38,
+    clearcoat: 1,
+    clearcoatRoughness: 0.02,
+    specularIntensity: 1,
+    iridescence: 0.35,
+    depthWrite: false,
+  })
+  const glow = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#d9f4ff', transparent: true, opacity: 0.28, side: THREE.BackSide, depthWrite: false }))
+  glow.scale.set(0.97, 0.98, 0.97)
+  root.add(glow)
+  const shell = new THREE.Mesh(geo, gel)
+  shell.renderOrder = 3
+  root.add(shell)
+  const bubble = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.1, transparent: true, opacity: 0.7, clearcoat: 1, depthWrite: false })
+  for (let i = 0; i < 46; i++) {
+    const a = Math.random() * Math.PI * 2
+    const y = 0.45 + Math.random() * 1.6
+    const rr = Math.random() * 0.75 * Math.sin(((y - 0.2) / 2.2) * Math.PI)
+    const r = 0.02 + Math.random() ** 2 * 0.07
+    const b = new THREE.Mesh(SPHERE, bubble)
+    b.scale.setScalar(r)
+    b.position.set(Math.cos(a) * rr, y, Math.sin(a) * rr)
+    root.add(b)
+  }
+  for (const k of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.3, 8, 24), gel)
+    leg.position.set(k * 0.4, 0.22, 0.12)
+    leg.rotation.z = k * 0.12
+    root.add(leg)
+  }
+  const face: Ell = { c: [0, 1.28, 0], r: [0.98, 1.08, 0.98] }
+  eyes(face, { x: 0.3, y: 0.28, size: 0.9 })
+  mouthW(face, 0.1, 0.32)
 }
 
 function tuft(color: string) {
@@ -631,10 +720,10 @@ const scene = new THREE.Scene()
 if (BG) scene.background = new THREE.Color(BG)
 const pmrem = new THREE.PMREMGenerator(renderer)
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
-scene.environmentIntensity = 0.55
+scene.environmentIntensity = 0.5
 
 scene.add(new THREE.HemisphereLight('#fffaf3', '#e8d3c4', 0.9))
-const key = new THREE.DirectionalLight('#fff4e6', 2.4)
+const key = new THREE.DirectionalLight('#fff4e6', 2.1)
 key.position.set(2.5, 7, 7)
 key.castShadow = true
 key.shadow.mapSize.set(2048, 2048)
@@ -643,9 +732,12 @@ key.shadow.blurSamples = 24
 key.shadow.bias = -0.0005
 Object.assign(key.shadow.camera, { left: -4, right: 4, top: 5, bottom: -2, near: 1, far: 20 })
 scene.add(key)
-const rim = new THREE.DirectionalLight('#ffffff', 2.2)
+const rim = new THREE.DirectionalLight('#ffffff', 2.8)
 rim.position.set(-4, 4, -5)
 scene.add(rim)
+const rim2 = new THREE.DirectionalLight('#fff2e2', 2.0)
+rim2.position.set(4.5, 3, -4.5)
+scene.add(rim2)
 const fill = new THREE.DirectionalLight('#ffe9f2', 0.7)
 fill.position.set(-5, 1.5, 4)
 scene.add(fill)

@@ -4,7 +4,7 @@
 import { chromium } from 'playwright-core'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
-const ALL = 'gau,meo,cho,tho,gautruc,koala,ho,sutu,cao,heo,bo,de,cuu,chuot,hamster,khi,ngua,kylan,voi,ga,gacon,vit,chim,vet,cu,canhcut,ech,ca,cavoi,caheo,bachtuoc'
+const ALL = 'xu,thach,gau,meo,cho,tho,gautruc,koala,ho,sutu,cao,heo,bo,de,cuu,chuot,hamster,khi,ngua,kylan,voi,ga,gacon,vit,chim,vet,cu,canhcut,ech,ca,cavoi,caheo,bachtuoc'
 const kinds = (process.argv[2] && process.argv[2] !== 'all' ? process.argv[2] : ALL).split(',')
 const out = process.argv[3] ?? 'public/thu-bong'
 const size = process.argv[4] ?? '384'

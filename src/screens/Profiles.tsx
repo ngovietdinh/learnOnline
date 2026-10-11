@@ -6,7 +6,7 @@ import { go } from '../core/router'
 import { sfx } from '../core/sound'
 import { EmoText } from '../components/Critter'
 
-const AVATARS = ['🐼', '🦊', '🐯', '🐨', '🐸', '🦄', '🐙', '🦁', '🐰', '🐧', '🐳', '🦉']
+const AVATARS = ['xu', 'thach', '🐼', '🦊', '🐯', '🐨', '🐸', '🦄', '🐙', '🦁', '🐰', '🐧', '🐳', '🦉']
 
 export function ProfilesScreen() {
   const profiles = useStore((s) => s.profiles)

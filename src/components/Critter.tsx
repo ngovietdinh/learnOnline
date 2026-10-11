@@ -6,6 +6,8 @@ import { Fragment } from 'react'
 export const ALL_CRITTERS = [
   'gau', 'meo', 'cho', 'tho', 'gautruc', 'koala', 'ho', 'sutu', 'cao', 'heo', 'bo', 'de', 'cuu', 'chuot', 'hamster', 'khi',
   'ngua', 'kylan', 'voi', 'ga', 'gacon', 'vit', 'chim', 'vet', 'cu', 'canhcut', 'ech', 'ca', 'cavoi', 'caheo', 'bachtuoc',
+  // hai bạn đồng hành: Bông Xù (lông dài) và Thạch (trong veo)
+  'xu', 'thach',
 ] as const
 export type CritterKind = (typeof ALL_CRITTERS)[number]
 
@@ -18,7 +20,12 @@ export const CRITTER_BY_EMOJI: Record<string, CritterKind> = {
   '🐧': 'canhcut', '🐸': 'ech', '🐟': 'ca', '🐠': 'ca', '🐳': 'cavoi', '🐋': 'cavoi', '🐬': 'caheo', '🐙': 'bachtuoc',
 }
 
-export const critterFor = (emoji: string): CritterKind | undefined => CRITTER_BY_EMOJI[emoji.replace(/️/g, '').trim()]
+const KIND_SET = new Set<string>(ALL_CRITTERS)
+/** Biểu tượng con vật, hoặc tên bạn thú (VD "xu", "thach" — dùng làm ảnh đại diện). */
+export const critterFor = (emoji: string): CritterKind | undefined => {
+  const e = emoji.replace(/\uFE0F/g, '').trim()
+  return CRITTER_BY_EMOJI[e] ?? (KIND_SET.has(e) ? (e as CritterKind) : undefined)
+}
 
 /** Bản đóng gói một tệp có thể nhúng sẵn ảnh (window.__THU_BONG); bình thường lấy từ thư mục thu-bong/. */
 function src(kind: CritterKind, closed: boolean) {
@@ -76,6 +83,8 @@ const seg = SegCtor ? new SegCtor('vi', { granularity: 'grapheme' }) : null
 
 /** Chuỗi có lẫn biểu tượng (VD "🐱🐶", "🦉 Cú"): thay từng con vật bằng thú bông. */
 export function EmoText({ text, size = '1.5em', still }: { text: string; size?: number | string; still?: boolean }) {
+  const whole = critterFor(text)
+  if (whole) return <Critter kind={whole} size={size} still={still} className="inline" />
   const parts = seg ? Array.from(seg.segment(text), (x) => x.segment) : Array.from(text)
   if (!parts.some((p) => critterFor(p))) return <>{text}</>
   return (
